@@ -16,8 +16,9 @@ SoilSage is a full-stack precision agriculture platform that gives Indian farmer
 | **Database** | Supabase (PostgreSQL) | Fields, recommendations, history |
 | **Weather API** | Open-Meteo (free, no key) | Real-time + 7-day forecast |
 | **Market API** | AGMARKNET / data.gov.in | Live mandi commodity prices |
-| **Auth** | Supabase Auth | Email/password authentication |
+| **Auth** | Supabase Auth | Email/password auth with input validation |
 | **ML Library** | scikit-learn (Random Forest) | Irrigation prediction model |
+| **ML Dataset** | dynamically generated | 12k+ synthetic Indian farming samples |
 | **Deployment** | Vercel (FE) + Render (ML) | Cloud hosting |
 | **i18n** | Custom React context | English ↔ ಕನ್ನಡ |
 
@@ -58,7 +59,7 @@ NIR (mm/week) = ETc_week - (Rain_7day × 0.75)
 - Converts to litres: `NIR_litres = NIR_mm × 10,000 × fieldArea_ha`
 
 **Step 4 — Python ML Model**
-- Random Forest trained on 10,000+ synthetic crop-weather samples
+- Random Forest trained on 12,000 synthetic crop-weather samples (generated natively via `generate_dataset.py`).
 - Features: soil moisture, pH, NPK, crop type, growth stage, temperature, humidity
 - Output: urgency classification + water amount refinement
 - API endpoint on Render, falls back to rule-based engine if offline
@@ -214,6 +215,8 @@ hackathon/
 │   └── pest-database.js            # 12 pests + treatment guides
 ├── ml/
 │   ├── api.py                      # Flask REST API (deployed on Render)
+│   ├── generate_dataset.py         # Generates 12k synthetic ML samples
+│   ├── dataset.csv                 # Generated training dataset
 │   ├── train_model.py              # scikit-learn Random Forest training
 │   ├── requirements.txt            # Python dependencies
 │   └── models/irrigation_model.pkl # Trained model artifact
