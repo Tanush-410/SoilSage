@@ -140,7 +140,7 @@ export default function Advisor() {
 
           {weather && !loading && (
             <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--blue-light)', border: '1px solid #bfdbfe', borderRadius: 10 }}>
-              <p style={{ fontSize: 11, color: 'var(--blue)', fontWeight: 800, marginBottom: 4 }}>LIVE WEATHER</p>
+              <p style={{ fontSize: 11, color: 'var(--blue)', fontWeight: 800, marginBottom: 4 }}>LIVE WEATHER - {(customMode ? custom.location : selectedField?.location || 'New Delhi').toUpperCase()}</p>
               <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{weather.current.icon} {weather.current.temperature?.toFixed(1)}°C · {weather.current.condition}</p>
               <p style={{ fontSize: 12, color: 'var(--text2)' }}>{weather.current.humidity}% RH · {weather.current.windSpeed} km/h</p>
             </div>
