@@ -63,7 +63,7 @@ export default function SettingsPage() {
               ['Features', '23 agronomic + weather variables'],
               ['Outputs', 'Irrigate decision · Urgency · Water volume · Efficiency'],
               ['Standard', 'FAO Irrigation & Drainage Paper No. 56'],
-              ['API Endpoint', 'http://localhost:5000/predict'],
+              ['API Endpoint', process.env.NEXT_PUBLIC_ML_API_URL ? `${process.env.NEXT_PUBLIC_ML_API_URL}/predict` : 'http://localhost:5000/predict'],
             ].map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border2)', fontSize: 13 }}>
                 <span style={{ color: 'var(--text2)', fontWeight: 600 }}>{k}</span>
