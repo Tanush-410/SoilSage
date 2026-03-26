@@ -12,6 +12,7 @@ export default function SoilHealthPage() {
   const { profile } = useAuth()
   const { t } = useTranslation()
   const [fields, setFields] = useState([])
+  const [weather, setWeather] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadData() }, [profile])
@@ -41,29 +42,29 @@ export default function SoilHealthPage() {
     let recs = []
     
     // pH Evaluation (25%)
-    const ph = f.ph_level || 0
+    const ph = f.soil_ph || 0
     if (ph >= 6.0 && ph <= 7.5) score += 25
-    else if (ph > 0) recs.push({ name: 'pH Imbalance', solution: ph < 6.0 ? 'Apply agricultural lime to raise pH.' : 'Apply elemental sulfur to lower pH.' })
+    else if (ph > 0) recs.push({ key: 'phImbalance', solutionKey: ph < 6.0 ? 'phLowSol' : 'phHighSol' })
     
     // N Evaluation (20%)
     const n = f.nitrogen || 0
     if (n >= 40) score += 20
-    else if (n > 0) recs.push({ name: 'Nitrogen Deficiency', solution: 'Apply Urea or organic nitrogen fertilizer.' })
+    else if (n > 0) recs.push({ key: 'nDeficiency', solutionKey: 'nSol' })
 
     // P Evaluation (15%)
     const p = f.phosphorus || 0
     if (p >= 25) score += 15
-    else if (p > 0) recs.push({ name: 'Phosphorus Deficiency', solution: 'Apply DAP or rock phosphate.' })
+    else if (p > 0) recs.push({ key: 'pDeficiency', solutionKey: 'pSol' })
 
     // K Evaluation (15%)
     const k = f.potassium || 0
     if (k >= 30) score += 15
-    else if (k > 0) recs.push({ name: 'Potassium Deficiency', solution: 'Apply MOP or potassium sulfate.' })
+    else if (k > 0) recs.push({ key: 'kDeficiency', solutionKey: 'kSol' })
 
     // Moisture Evaluation (25%)
     const m = f.soil_moisture || 0
     if (m >= 55 && m <= 75) score += 25
-    else if (m > 0) recs.push({ name: m < 55 ? 'Low Moisture' : 'Waterlogged', solution: m < 55 ? 'Irrigate field immediately.' : 'Improve soil drainage and reduce irrigation.' })
+    else if (m > 0) recs.push({ key: m < 55 ? 'lowMoisture' : 'highMoisture', solutionKey: m < 55 ? 'lowMoistureSol' : 'highMoistureSol' })
 
     if (score === 0 && (n===0 && p===0 && k===0 && ph===0 && m===0)) {
       score = 0; // completely empty field
@@ -85,9 +86,9 @@ export default function SoilHealthPage() {
   })
 
   // Exclude empty fields from average calculation if they have 0 properties set
-  const avgHealth = Math.round(
-    computedFields.reduce((sum, f) => sum + f.healthScore, 0) / (computedFields.length || 1)
-  )
+  const avgHealth = computedFields.length > 0 ? Math.round(
+    computedFields.reduce((sum, f) => sum + f.healthScore, 0) / computedFields.length
+  ) : 0
 
   const criticalCount = computedFields.filter(f => f.healthScore < 40 && f.healthScore > 0).length
 
@@ -173,7 +174,7 @@ export default function SoilHealthPage() {
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#2d8a4e', marginBottom: 8, marginTop: 0 }}>📊 Real-Time Metrics:</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 11 }}>
                   <div>{t('moisturePct')}: <strong style={{ color: '#2d8a4e' }}>{field.soil_moisture || 0}%</strong></div>
-                  <div>{t('phLevel')}: <strong style={{ color: '#2d8a4e' }}>{field.ph_level || 0}</strong></div>
+                  <div>{t('phLevel')}: <strong style={{ color: '#2d8a4e' }}>{field.soil_ph || 0}</strong></div>
                   <div>{t('nitrogen')}: <strong style={{ color: '#2d8a4e' }}>{field.nitrogen || 0} ppm</strong></div>
                   <div>{t('phosphorus')}: <strong style={{ color: '#2d8a4e' }}>{field.phosphorus || 0} ppm</strong></div>
                   <div>{t('potassium')}: <strong style={{ color: '#2d8a4e' }}>{field.potassium || 0} ppm</strong></div>
@@ -186,11 +187,11 @@ export default function SoilHealthPage() {
                 <p style={{ fontSize: 11, fontWeight: 600, color: '#8aab96', marginBottom: 8 }}>📋 {t('recommendations')}:</p>
                 {field.recs.length > 0 ? field.recs.map((rec, i) => (
                   <div key={i} style={{ padding: 8, background: '#fef3cd', borderRadius: 6, marginBottom: 6, fontSize: 11, color: '#8a6d47' }}>
-                    <p style={{ margin: 0, fontWeight: 600 }}>{rec.name}</p>
-                    <p style={{ margin: '4px 0 0 0', fontSize: 10 }}>{rec.solution}</p>
+                    <p style={{ margin: 0, fontWeight: 600 }}>{t(rec.key)}</p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: 10 }}>{t(rec.solutionKey)}</p>
                   </div>
                 )) : (
-                  <p style={{ fontSize: 11, color: '#2d8a4e', fontWeight: 600 }}>✅ Field parameters are optimally balanced.</p>
+                  <p style={{ fontSize: 11, color: '#2d8a4e', fontWeight: 600 }}>{t('balancedField')}</p>
                 )}
               </div>
             </div>

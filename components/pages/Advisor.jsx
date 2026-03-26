@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { getMLPrediction, getPestPrediction } from '../../lib/ml-client'
 import { fetchWeather, geocodeCity } from '../../lib/weather'
 import { getAllCrops, CROP_DATABASE, SOIL_TYPES, GROWTH_STAGES } from '../../lib/crops'
@@ -9,6 +10,7 @@ import { Brain, Loader2, Droplets, Clock, AlertTriangle, CheckCircle, Leaf, Flas
 
 export default function Advisor() {
   const { t } = useTranslation()
+  const { profile } = useAuth()
   const [fields, setFields] = useState([])
   const [selectedField, setSelectedField] = useState(null)
   const [weather, setWeather] = useState(null)
@@ -18,7 +20,25 @@ export default function Advisor() {
   const [loadingFields, setLoadingFields] = useState(true)
   const [customMode, setCustomMode] = useState(false)
   const [error, setError] = useState(null)
-  const [custom, setCustom] = useState({ crop_type: '', soil_type: 'Loamy Soil', growth_stage: 'Vegetative', soil_moisture: 60, soil_ph: 6.5, soil_temperature: 25, nitrogen: 40, phosphorus: 30, potassium: 35, area_hectares: 1, location: 'New Delhi' })
+  const [custom, setCustom] = useState({ 
+    crop_type: '', 
+    soil_type: 'Loamy Soil', 
+    growth_stage: 'Vegetative', 
+    soil_moisture: 60, 
+    soil_ph: 6.5, 
+    soil_temperature: 25, 
+    nitrogen: 40, 
+    phosphorus: 30, 
+    potassium: 35, 
+    area_hectares: 1, 
+    location: profile?.location || '' 
+  })
+
+  useEffect(() => {
+    if (profile?.location) {
+      setCustom(prev => ({ ...prev, location: profile.location }))
+    }
+  }, [profile])
 
   useEffect(() => {
     supabase.from('fields').select('*').order('created_at', { ascending: false }).then(({ data }) => {
@@ -35,9 +55,14 @@ export default function Advisor() {
     try {
       const fieldData = customMode ? custom : selectedField
       if (!fieldData) return
-      const loc = fieldData.location || 'New Delhi'
+      const loc = fieldData.location || profile?.location || ''
+      if (!loc) {
+        setError('Please specify a location or set it in your profile.')
+        setLoading(false)
+        return
+      }
       const geo = await geocodeCity(loc)
-      const w = await fetchWeather(geo?.latitude || 28.6, geo?.longitude || 77.2)
+      const w = await fetchWeather(geo?.latitude || 12.97, geo?.longitude || 77.59) // Default to Bangalore if geocode fails but loc exists
       setWeather(w)
       const allCrops = getAllCrops()
       const cropObj = allCrops.find(c => c.name === fieldData.crop_type) || { name: fieldData.crop_type || 'Wheat', category: 'Cereals', waterNeed: 'medium', optimalMoisture: 60, id: 'wheat' }
@@ -193,7 +218,7 @@ export default function Advisor() {
               <div className="glass-card">
                 <div className="card-header"><h3><FlaskConical size={15} style={{ display: 'inline', marginRight: 6 }} />{t('scientificMetrics')}</h3></div>
                 <div className="sci-metrics">
-                  {[['ET₀', rec.et0, 'mm/day'], ['Crop Kc', rec.kc, '—'], ['ETc', rec.etcPerDay, 'mm/day'], ['Zone TAW', rec.rootZoneTAW, 'mm'], ['Depletion', rec.rootZoneDepletion, 'mm'], ['Sessions', rec.schedule?.length, 'events']].map(([l, v, u]) => (
+                  {[[t('et0'), rec.et0, t('mmDay')], [t('cropKc'), rec.kc, '—'], [t('etc'), rec.etcPerDay, t('mmDay')], [t('zoneTaw'), rec.rootZoneTAW, 'mm'], [t('depletion'), rec.rootZoneDepletion, 'mm'], [t('sessions'), rec.schedule?.length, t('events')]].map(([l, v, u]) => (
                     <div key={l} className="sci-metric"><div className="sci-metric-label">{l}</div><div className="sci-metric-value">{v}</div><div className="sci-metric-unit">{u}</div></div>
                   ))}
                 </div>
@@ -232,7 +257,7 @@ export default function Advisor() {
                 <div className="glass-card" style={{ border: `1.5px solid ${pestRec.pestAlertCode >= 2 ? '#fbd38d' : 'var(--border2)'}` }}>
                   <div className="card-header">
                     <h3>{t('pestRiskTitle')}</h3>
-                    <span className={`urgency-badge urgency-${pestRec.pestAlertCode >= 3 ? 'critical' : pestRec.pestAlertCode >= 2 ? 'high' : pestRec.pestAlertCode >= 1 ? 'medium' : 'low'}`}>{pestRec.pestRiskLevel} risk</span>
+                    <span className={`urgency-badge urgency-${pestRec.pestAlertCode >= 3 ? 'critical' : pestRec.pestAlertCode >= 2 ? 'high' : pestRec.pestAlertCode >= 1 ? 'medium' : 'low'}`}>{pestRec.pestRiskLevel} {t('riskLabel')}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
                     <div className="rec-metric"><div className="rec-metric-value" style={{ color: pestRec.pestAlertCode >= 2 ? 'var(--amber)' : 'var(--green)' }}>{pestRec.pestRiskScore}/10</div><div className="rec-metric-label">{t('riskScore')}</div></div>
