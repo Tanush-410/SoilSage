@@ -29,9 +29,9 @@
   --shadow-lg: 0 8px 28px rgba(0,0,0,0.10);
 }
 
-html { font-size: clamp(13px, 1.4vw, 16px); }
+html { font-size: clamp(11px, 2.8vw, 16px); }
 html, body { height: 100%; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; font-size: clamp(13px, 1.4vw, 15px); }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; font-size: clamp(12px, 2vw, 15px); }
 input, select, textarea, button { font-family: var(--font); }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -474,7 +474,7 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 640px) {
-  body { font-size: clamp(12px, 1.3vw, 14px); }
+  body { font-size: clamp(11px, 3.5vw, 13px); }
   .auth-container { padding: 16px; align-items: flex-start; }
   .auth-card {
     margin-top: 20px;
