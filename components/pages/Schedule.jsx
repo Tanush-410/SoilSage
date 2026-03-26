@@ -49,7 +49,7 @@ export default function Schedule() {
         <div><h1 className="page-title">7-Day Irrigation Schedule</h1><p className="page-sub">Daily ETc balance — FAO-56 Penman-Monteith</p></div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'start' }}>
+      <div className="schedule-layout">
         <div className="glass-card">
           <div className="card-header"><h3>Select Field</h3></div>
           {loadingFields ? <div className="center-loader"><Loader2 size={24} className="spin" /></div> : (
