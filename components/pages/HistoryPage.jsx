@@ -54,7 +54,7 @@ export default function HistoryPage() {
         <button className="btn-primary" onClick={() => setShowLogForm(true)}><Plus size={16} /> Log Irrigation</button>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div className="page-tabs" style={{ marginBottom: 20 }}>
         <button className={`auth-tab ${tab === 'recs' ? 'active' : ''}`} onClick={() => setTab('recs')} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === 'recs' ? 'var(--green)' : 'var(--bg2)', color: tab === 'recs' ? '#fff' : 'var(--text2)' }}>
           AI Recommendations ({recs.length})
         </button>

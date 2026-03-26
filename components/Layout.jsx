@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, Wifi } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
@@ -20,14 +20,33 @@ const navItems = [
 export default function Layout() {
   const [page, setPage] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { profile, signOut } = useAuth()
 
   const pages = { dashboard: Dashboard, fields: Fields, advisor: Advisor, schedule: Schedule, history: HistoryPage, settings: SettingsPage }
   const PageComponent = pages[page] || Dashboard
 
+  useEffect(() => {
+    if (!mobileNavOpen) return
+
+    const handleResize = () => {
+      if (window.innerWidth > 900) setMobileNavOpen(false)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [mobileNavOpen])
+
+  function navigateTo(nextPage) {
+    setPage(nextPage)
+    setMobileNavOpen(false)
+  }
+
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+      {mobileNavOpen && <button className="sidebar-backdrop" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation" />}
+
+      <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileNavOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="logo-icon" style={{ width: 36, height: 36, borderRadius: 10 }}><Droplets size={18} /></div>
@@ -40,7 +59,7 @@ export default function Layout() {
 
         <nav className="sidebar-nav">
           {navItems.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} onClick={() => setPage(id)} title={collapsed ? label : undefined}>
+            <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} onClick={() => navigateTo(id)} title={collapsed ? label : undefined}>
               <Icon size={20} />
               {!collapsed && <span>{label}</span>}
               {!collapsed && page === id && <ChevronRight size={14} className="nav-arrow" />}
@@ -58,11 +77,11 @@ export default function Layout() {
               </div>
             </div>
           )}
-          <button className="nav-item" onClick={() => setPage('settings')} title="Settings">
+          <button className="nav-item" onClick={() => navigateTo('settings')} title="Settings">
             <Settings size={18} />
             {!collapsed && <span>Settings</span>}
           </button>
-          <button className="nav-item danger" onClick={signOut} title="Logout">
+          <button className="nav-item danger" onClick={() => { setMobileNavOpen(false); signOut() }} title="Logout">
             <LogOut size={18} />
             {!collapsed && <span>Sign Out</span>}
           </button>
@@ -72,6 +91,9 @@ export default function Layout() {
       <main className="main-content">
         <div className="topbar">
           <div className="topbar-left">
+            <button className="mobile-menu-btn" onClick={() => setMobileNavOpen(true)} aria-label="Open navigation">
+              <Menu size={18} />
+            </button>
             <div className="live-indicator">Live</div>
             <span className="topbar-date">
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -80,7 +102,7 @@ export default function Layout() {
 
         </div>
         <div className="page-content">
-          <PageComponent onNavigate={setPage} />
+          <PageComponent onNavigate={navigateTo} />
         </div>
       </main>
     </div>
