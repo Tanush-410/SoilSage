@@ -1,0 +1,6 @@
+A custom Agronomic AI Engine based on:
+
+FAO-56 Penman-Monteith evapotranspiration model — the gold standard used by NASA, USDA, and agricultural universities worldwide
+Real crop coefficients (Kc) from FAO Irrigation & Drainage Paper No. 56 database
+Soil Water Balance modeling (root zone depletion, field capacity, wilting point)
+Weather-adaptive irrigation scheduling logic
