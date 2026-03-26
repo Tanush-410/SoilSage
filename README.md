@@ -236,17 +236,18 @@ hackathon/
 
 ---
 
-## 🌐 Data Sources
+## 🌐 Data Sources & How We Fetch Them
 
-| Data | Source | Update Frequency |
-|------|--------|-----------------|
-| Weather + 7-day forecast | [Open-Meteo](https://open-meteo.com) | Real-time |
-| Geocoding (city → lat/lon) | Open-Meteo Geocoding API | Per request |
-| Mandi crop prices | [AGMARKNET / data.gov.in](https://data.gov.in) | Daily |
-| MSP 2024-25 | Ministry of Agriculture India | Annual |
-| Crop Kc values | FAO-56 Irrigation Paper No.56 | Static (scientific) |
-| Yield benchmarks | ICAR data | Static (scientific) |
-| Soil properties | FAO soil database | Static (scientific) |
+| Data | Source URL / API | Fetch Mechanism | Update Frequency |
+|------|------------------|----------------|-----------------|
+| **Weather + 7-day forecast** | `https://api.open-meteo.com/v1/forecast` | Client-side `fetch()` directly in browser | Real-time |
+| **Geocoding (city → lat/lon)** | `https://geocoding-api.open-meteo.com/v1/search` | Client-side `fetch()` during location setup | Per request |
+| **Live Mandi Crop Prices** | `https://api.data.gov.in` (AGMARKNET Resource ID) | Server-side Next.js route `/api/crop-prices/route.js` | Daily |
+| **Synthetic ML Dataset** | N/A (Locally generated) | Generated on-demand via `ml/generate_dataset.py` | Built at deploy |
+| **MSP 2024-25 Fallback** | Min. of Agriculture India | Hardcoded in `lib/crop-market-data.js` | Annual |
+| **Crop Kc values** | FAO-56 Irrigation Paper No.56 | Hardcoded JSON in `lib/crops.js` | Static (scientific) |
+| **Yield benchmarks** | ICAR data | Constants in `lib/yield-calculator.js` | Static (scientific) |
+| **Pest Logic** | ICAR Pest Management Info | Hardcoded rules in `lib/pest-database.js` | Static (scientific) |
 
 ---
 
