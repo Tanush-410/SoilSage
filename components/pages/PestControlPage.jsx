@@ -4,13 +4,18 @@ import { supabase } from '../../lib/supabase'
 import { fetchWeather, geocodeCity } from '../../lib/weather'
 import { getPestPrediction } from '../../lib/ml-client'
 import { getAllCrops } from '../../lib/crops'
+import { PEST_DATABASE, SEVERITY_COLORS } from '../../lib/pest-database'
 import { useAuth } from '../../context/AuthContext'
 import { useTranslation } from '../../lib/i18n'
-import { Bug, Loader2, Sprout, Droplets, Thermometer, Wind, AlertTriangle } from 'lucide-react'
+import { Bug, Loader2, Sprout, Droplets, Thermometer, AlertTriangle, Leaf, FlaskConical } from 'lucide-react'
+
+const TABS = ['overview', 'directory', 'treatment', 'detected']
+const TAB_LABELS = { overview: ['📊 Overview', '📊 ಅವಲೋಕನ'], directory: ['🐛 Pest Directory', '🐛 ಕೀಟ ಪಟ್ಟಿ'], treatment: ['🌿 Treatment Guide', '🌿 ಚಿಕಿತ್ಸೆ ಮಾರ್ಗದರ್ಶಿ'], detected: ['🔍 Detected Pests', '🔍 ಪತ್ತೆ ಕೀಟಗಳು'] }
 
 export default function PestControlPage() {
   const { profile } = useAuth()
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
+  const [tab, setTab] = useState('overview')
   const [fields, setFields] = useState([])
   const [weather, setWeather] = useState(null)
   const [pestResults, setPestResults] = useState([])
@@ -21,7 +26,7 @@ export default function PestControlPage() {
   async function loadAll() {
     setLoading(true)
     try {
-      const { data: f } = await supabase.from('fields').select('*').order('created_at', { ascending: false })
+      const { data: f } = await supabase.from('fields').select('*')
       setFields(f || [])
       const geo = await geocodeCity(profile?.location || 'New Delhi')
       const w = await fetchWeather(geo?.latitude || 28.6, geo?.longitude || 77.2)
@@ -35,10 +40,15 @@ export default function PestControlPage() {
     setLoading(false)
   }
 
-  const highRisk = pestResults.filter(r => r.pest?.pestAlertCode >= 2).length
-  const riskColor = c => c >= 3 ? 'var(--red)' : c >= 2 ? 'var(--amber)' : c >= 1 ? '#f59e0b' : 'var(--green)'
-  const riskBg = c => c >= 3 ? 'var(--red-light)' : c >= 2 ? 'var(--amber-light)' : c >= 1 ? '#fef9c3' : 'var(--green-light)'
-  const riskLabel = c => c >= 3 ? 'HIGH' : c >= 2 ? 'MEDIUM' : c >= 1 ? 'LOW' : 'MINIMAL'
+  const criticalCount = PEST_DATABASE.filter(p => p.severity === 'critical').length
+  const highCount = PEST_DATABASE.filter(p => p.severity === 'high').length
+  const mediumCount = PEST_DATABASE.filter(p => p.severity === 'medium').length
+  const highRiskFields = pestResults.filter(r => r.pest?.pestAlertCode >= 2).length
+
+  const SeverityBadge = ({ s }) => {
+    const sc = SEVERITY_COLORS[s] || SEVERITY_COLORS.medium
+    return <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: sc.bg, color: sc.color }}>{sc.label}</span>
+  }
 
   return (
     <div className="page">
@@ -47,109 +57,208 @@ export default function PestControlPage() {
           <h1 className="page-title"><Bug size={22} style={{ display: 'inline', marginRight: 8, color: 'var(--amber)' }} />{t('pestMonitorTitle')}</h1>
           <p className="page-sub">{t('pestMonitorSub')}</p>
         </div>
-        <button className="btn-primary" onClick={loadAll} disabled={loading}>
-          {loading ? <><Loader2 size={14} className="spin" /> {t('refreshing')}</> : t('refresh')}
-        </button>
+        <button className="btn-primary" onClick={loadAll} disabled={loading}>{loading ? <><Loader2 size={14} className="spin" /> {t('refreshing')}</> : t('refresh')}</button>
       </div>
 
-      {weather && (
-        <div className="glass-card" style={{ marginBottom: 20, padding: '14px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <div className="live-indicator">Live</div>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>{t('weatherPestNote')} — {profile?.location || 'Your Location'}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            {[
-              { icon: <Droplets size={14} />, label: t('humidity'), value: `${weather.current.humidity}%`, alert: weather.current.humidity > 80 },
-              { icon: <Thermometer size={14} />, label: t('temp'), value: `${weather.current.temperature?.toFixed(1)}°C`, alert: weather.current.temperature > 32 },
-              { icon: <Wind size={14} />, label: 'Wind', value: `${weather.current.windSpeed} km/h`, alert: false },
-              { icon: <span>🌧️</span>, label: t('rain'), value: `${weather.current.rain}mm`, alert: weather.current.rain > 5 },
-            ].map(({ icon, label, value, alert }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: alert ? 'var(--amber-light)' : 'var(--bg2)', borderRadius: 8, border: alert ? '1px solid var(--amber)' : '1px solid var(--border2)' }}>
-                <span style={{ color: alert ? 'var(--amber)' : 'var(--text2)' }}>{icon}</span>
-                <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}:</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: alert ? 'var(--amber)' : 'var(--text)' }}>{value}</span>
-                {alert && <span style={{ fontSize: 10, color: 'var(--amber)' }}>⚠️</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        {TABS.map(tb => (
+          <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb ? 'var(--green)' : 'var(--bg2)', color: tab === tb ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
+            {TAB_LABELS[tb][lang === 'kn' ? 1 : 0]}
+          </button>
+        ))}
+      </div>
 
-      {!loading && pestResults.length > 0 && (
-        <div className="stats-grid" style={{ marginBottom: 24 }}>
-          <div className="stat-card stat-orange"><div className="stat-icon"><Bug /></div><div className="stat-content"><p className="stat-label">{t('highRiskFields')}</p><p className="stat-value" style={{ color: highRisk > 0 ? 'var(--red)' : 'var(--green)' }}>{highRisk} <span className="stat-unit">{t('fields')}</span></p></div></div>
-          <div className="stat-card stat-blue"><div className="stat-icon"><Droplets /></div><div className="stat-content"><p className="stat-label">{t('currentHumidity')}</p><p className="stat-value">{weather?.current?.humidity || '—'}<span className="stat-unit">%</span></p><p className="stat-trend">{weather?.current?.humidity > 80 ? '⚠️ ' + t('highRiskFields') : 'Normal'}</p></div></div>
-          <div className="stat-card stat-green"><div className="stat-icon"><Sprout /></div><div className="stat-content"><p className="stat-label">{t('fieldMonitored')}</p><p className="stat-value">{pestResults.length} <span className="stat-unit">{t('fields')}</span></p></div></div>
-        </div>
-      )}
-
-      {loading ? <div className="center-loader"><Loader2 size={40} className="spin" /></div>
-        : fields.length === 0 ? (
-          <div className="empty-page"><Bug size={64} /><h2>{t('noFieldsYet')}</h2><p>{t('pestEmptyDesc')}</p></div>
-        ) : (
-          <div className="fields-grid">
-            {pestResults.map(({ field, pest }) => {
-              if (!pest) return null
-              const color = riskColor(pest.pestAlertCode)
-              const bg = riskBg(pest.pestAlertCode)
-              const label = riskLabel(pest.pestAlertCode)
-              return (
-                <div key={field.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 14, border: pest.pestAlertCode >= 2 ? `1.5px solid ${color}` : undefined }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Sprout size={18} color="var(--green)" />
-                      <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 800 }}>{field.name}</h3>
-                        <span style={{ fontSize: 12, color: 'var(--text2)' }}>{field.crop_type} · {field.area_hectares}ha · {field.growth_stage || 'Vegetative'}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', padding: '6px 12px', background: bg, borderRadius: 10 }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color }}>{pest.pestRiskScore}<span style={{ fontSize: 12 }}>/10</span></div>
-                      <div style={{ fontSize: 11, fontWeight: 800, color }}>{label}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                      <span style={{ color: 'var(--text2)' }}>{t('riskLevel')}</span>
-                      <span style={{ color, fontWeight: 700 }}>{pest.pestRiskLevel}</span>
-                    </div>
-                    <div style={{ height: 8, background: 'var(--bg2)', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${(pest.pestRiskScore / 10) * 100}%`, height: '100%', background: color, borderRadius: 4 }} />
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '8px 12px', background: bg, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('scouting')}</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color }}>{pest.monitoringFrequency}</span>
-                  </div>
-
-                  <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    <span>🌡️ {weather?.current?.temperature?.toFixed(0)}°C</span>
-                    <span>💧 {weather?.current?.humidity}% {t('humidity')}</span>
-                    <span>🌧️ {weather?.current?.rain}mm {t('rain')}</span>
-                  </div>
-
-                  {pest.recommendations?.length > 0 && (
-                    <div>
-                      <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{t('recommendations')}</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {pest.recommendations.map((r, i) => <div key={i} style={{ fontSize: 12, padding: '6px 10px', background: 'var(--bg2)', borderRadius: 8, borderLeft: `3px solid ${color}` }}>{r}</div>)}
-                      </div>
-                    </div>
-                  )}
-
-                  {pest.alerts?.length > 0 && pest.alerts.map((a, i) => (
-                    <div key={i} style={{ fontSize: 12, padding: '6px 10px', background: 'var(--red-light)', borderRadius: 8, borderLeft: '3px solid var(--red)' }}>
-                      <AlertTriangle size={11} style={{ display: 'inline', marginRight: 4 }} />{a}
-                    </div>
-                  ))}
+      {/* OVERVIEW TAB */}
+      {tab === 'overview' && (
+        <>
+          <div className="glass-card" style={{ marginBottom: 20 }}>
+            <div className="card-header"><h3>🎯 Risk Assessment</h3></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+              {[
+                { label: 'Critical', count: criticalCount, sub: 'pests', color: '#dc2626', bg: '#fee2e2' },
+                { label: 'High', count: highCount, sub: 'pests', color: '#ea580c', bg: '#ffedd5' },
+                { label: 'Medium', count: mediumCount, sub: 'pests', color: '#ca8a04', bg: '#fef9c3' },
+              ].map(({ label, count, sub, color, bg }) => (
+                <div key={label} style={{ background: bg, border: `1px solid ${color}30`, borderRadius: 12, padding: '16px 20px' }}>
+                  <p style={{ fontSize: 12, color, fontWeight: 700, marginBottom: 6 }}>{label}</p>
+                  <p style={{ fontSize: 40, fontWeight: 900, color, lineHeight: 1 }}>{count}</p>
+                  <p style={{ fontSize: 11, color, marginTop: 4 }}>{sub}</p>
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
-        )}
+          <div className="glass-card">
+            <div className="card-header"><h3>⚡ Quick Facts</h3></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {[
+                ['Total Covered Pests', PEST_DATABASE.length, 'Common agricultural pests in India', 'var(--blue)'],
+                ['Comprehensive Treatments', '3x', 'Per pest (Organic, Chemical, Bio)', 'var(--green)'],
+                ['Your At-Risk Fields', loading ? '—' : highRiskFields, 'Based on live weather', highRiskFields > 0 ? 'var(--red)' : 'var(--green)'],
+                ['Current Humidity', weather ? `${weather.current?.humidity}%` : '—', weather?.current?.humidity > 80 ? '⚠️ High — pest risk elevated' : 'Normal range', 'var(--blue)'],
+              ].map(([k, v, sub, col]) => (
+                <div key={k} style={{ padding: '14px 16px', background: 'var(--bg2)', borderRadius: 12 }}>
+                  <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>{k}</p>
+                  <p style={{ fontSize: 28, fontWeight: 900, color: col }}>{v}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>{sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* PEST DIRECTORY TAB */}
+      {tab === 'directory' && (
+        <div className="fields-grid">
+          {PEST_DATABASE.map(pest => (
+            <div key={pest.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, border: `1.5px solid ${SEVERITY_COLORS[pest.severity]?.color}25`, cursor: 'pointer' }} onClick={() => setTab('treatment')}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800 }}>{pest.emoji} {pest.name}</h3>
+                  <p style={{ fontSize: 11, color: 'var(--text3)', fontStyle: 'italic' }}>{pest.scientific}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4 }}>{pest.description}</p>
+                </div>
+                <SeverityBadge s={pest.severity} />
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, marginBottom: 6 }}>Affects Crops:</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {pest.affectedCrops.map(c => <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: 'var(--bg2)', borderRadius: 6, color: 'var(--text2)', fontWeight: 600 }}>{c}</span>)}
+                </div>
+              </div>
+              <div style={{ padding: '8px 10px', background: 'var(--amber-light)', borderRadius: 8, fontSize: 12, color: 'var(--amber)', borderLeft: '3px solid var(--amber)' }}>
+                ⚠️ Risk Conditions: {pest.riskConditions}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TREATMENT GUIDE TAB */}
+      {tab === 'treatment' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {PEST_DATABASE.map(pest => (
+            <div key={pest.id} className="glass-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 800 }}>{pest.emoji} {pest.name}</h3>
+                <SeverityBadge s={pest.severity} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 14 }}>
+                {[
+                  { key: 'organic', label: '🌿 ORGANIC: ' + pest.treatment.organic.name, color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
+                  { key: 'chemical', label: '⚗️ CHEMICAL: ' + pest.treatment.chemical.name, color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
+                  { key: 'bioagent', label: '🔵 BIOAGENT: ' + pest.treatment.bioagent.name, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+                ].map(({ key, label, color, bg, border }) => {
+                  const tr = pest.treatment[key]
+                  return (
+                    <div key={key} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: '14px' }}>
+                      <p style={{ fontSize: 12, fontWeight: 800, color, marginBottom: 10 }}>{label}</p>
+                      <p style={{ fontSize: 11, color: '#374151', fontWeight: 700, marginBottom: 5 }}>Steps:</p>
+                      {tr.steps.map((s, i) => <p key={i} style={{ fontSize: 11, color: '#374151', marginBottom: 3 }}>{i + 1}. {s}</p>)}
+                      <div style={{ marginTop: 10, display: 'flex', gap: 12 }}>
+                        <span style={{ fontSize: 11, color }}><strong>💰 Cost:</strong> {tr.cost}</span>
+                        <span style={{ fontSize: 11, color }}><strong>⏱ Time:</strong> {tr.time}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ padding: '10px 14px', background: 'var(--green-light)', borderRadius: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', marginBottom: 4 }}>✅ Preventive Measures:</p>
+                  <p style={{ fontSize: 12, color: 'var(--text2)' }}>{pest.preventive}</p>
+                </div>
+                <div style={{ padding: '10px 14px', background: 'var(--bg2)', borderRadius: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 4 }}>🔍 Pest Indicators:</p>
+                  <p style={{ fontSize: 12, color: 'var(--text2)' }}>{pest.indicators}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* DETECTED PESTS TAB */}
+      {tab === 'detected' && (
+        <>
+          {weather && (
+            <div className="glass-card" style={{ marginBottom: 20, padding: '14px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div className="live-indicator">Live</div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>{t('weatherPestNote')} — {profile?.location || 'Your Location'}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                {[
+                  { label: t('humidity'), value: `${weather.current.humidity}%`, alert: weather.current.humidity > 80, icon: <Droplets size={13} /> },
+                  { label: t('temp'), value: `${weather.current.temperature?.toFixed(1)}°C`, alert: weather.current.temperature > 32, icon: <Thermometer size={13} /> },
+                  { label: t('rain'), value: `${weather.current.rain}mm`, alert: false, icon: '🌧️' },
+                ].map(({ label, value, alert, icon }) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: alert ? 'var(--amber-light)' : 'var(--bg2)', borderRadius: 8, border: alert ? '1px solid var(--amber)' : '1px solid var(--border2)' }}>
+                    <span style={{ color: alert ? 'var(--amber)' : 'var(--text3)' }}>{icon}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{label}:</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: alert ? 'var(--amber)' : 'var(--text)' }}>{value}</span>
+                    {alert && <span>⚠️</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {loading ? <div className="center-loader"><Loader2 size={40} className="spin" /></div>
+            : fields.length === 0 ? <div className="empty-page"><Bug size={64} /><h2>{t('noFieldsYet')}</h2><p>{t('pestEmptyDesc')}</p></div>
+            : (
+              <div className="fields-grid">
+                {pestResults.map(({ field, pest }) => {
+                  if (!pest) return null
+                  const code = pest.pestAlertCode
+                  const color = code >= 3 ? 'var(--red)' : code >= 2 ? 'var(--amber)' : code >= 1 ? '#f59e0b' : 'var(--green)'
+                  const bg = code >= 3 ? 'var(--red-light)' : code >= 2 ? 'var(--amber-light)' : code >= 1 ? '#fef9c3' : 'var(--green-light)'
+                  const matchedPests = PEST_DATABASE.filter(p => p.affectedCrops.some(c => c.toLowerCase() === field.crop_type?.toLowerCase()))
+                  return (
+                    <div key={field.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, border: code >= 2 ? `1.5px solid ${color}` : undefined }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Sprout size={18} color="var(--green)" />
+                          <div>
+                            <h3 style={{ fontSize: 16, fontWeight: 800 }}>{field.name}</h3>
+                            <span style={{ fontSize: 12, color: 'var(--text2)' }}>{field.crop_type} · {field.area_hectares}ha</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', padding: '8px 14px', background: bg, borderRadius: 10 }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color }}>{pest.pestRiskScore}<span style={{ fontSize: 12 }}>/10</span></div>
+                          <div style={{ fontSize: 11, fontWeight: 800, color }}>{pest.pestRiskLevel.toUpperCase()}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                          <span style={{ color: 'var(--text2)' }}>{t('riskLevel')}</span>
+                          <span style={{ color, fontWeight: 700 }}>{pest.monitoringFrequency}</span>
+                        </div>
+                        <div style={{ height: 8, background: 'var(--bg2)', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${(pest.pestRiskScore / 10) * 100}%`, height: '100%', background: color, borderRadius: 4 }} /></div>
+                      </div>
+                      {matchedPests.length > 0 && (
+                        <div>
+                          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Susceptible to:</p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                            {matchedPests.map(p => {
+                              const sc = SEVERITY_COLORS[p.severity]
+                              return <span key={p.id} style={{ fontSize: 11, padding: '3px 8px', background: sc.bg, color: sc.color, borderRadius: 6, fontWeight: 700 }}>{p.emoji} {p.name}</span>
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {pest.recommendations?.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                          {pest.recommendations.map((r, i) => <div key={i} style={{ fontSize: 12, padding: '6px 10px', background: 'var(--bg2)', borderRadius: 8, borderLeft: `3px solid ${color}` }}>{r}</div>)}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+        </>
+      )}
     </div>
   )
 }

@@ -1,25 +1,37 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { estimateYield, formatRupees } from '../../lib/yield-calculator'
+import { estimateYield } from '../../lib/yield-calculator'
+import { CROP_MARKET_DATA, CATEGORIES, formatRs } from '../../lib/crop-market-data'
 import { useTranslation } from '../../lib/i18n'
-import { TrendingUp, Loader2, Sprout, BarChart3 } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, BarChart3, Sprout, Loader2, Search } from 'lucide-react'
+
+const TABS = ['overview', 'prices', 'forecast', 'myYield']
+const TAB_LABELS = { overview: ['📊 Overview', '📊 ಅವಲೋಕನ'], prices: ['🌾 Crop Prices', '🌾 ಬೆಳೆ ಬೆಲೆ'], forecast: ['📈 Price Forecast', '📈 ಬೆಲೆ ಮುನ್ಸೂಚನೆ'], myYield: ['🚜 My Yield', '🚜 ನನ್ನ ಇಳುವರಿ'] }
 
 export default function YieldPricePage() {
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
+  const [tab, setTab] = useState('overview')
   const [fields, setFields] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('All')
 
   useEffect(() => {
-    supabase.from('fields').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      setFields(data || [])
-      setLoading(false)
-    })
+    supabase.from('fields').select('*').then(({ data }) => { setFields(data || []); setLoading(false) })
   }, [])
 
-  const allYields = fields.map(f => ({ ...f, yieldData: estimateYield(f.crop_type, parseFloat(f.area_hectares) || 1, 75) }))
-  const totalRevenue = allYields.reduce((s, f) => s + (f.yieldData?.marketValueRs || 0), 0)
-  const totalYield = allYields.reduce((s, f) => s + (f.yieldData?.yieldTonnes || 0), 0)
+  const fieldYields = fields.map(f => ({ ...f, yieldData: estimateYield(f.crop_type, parseFloat(f.area_hectares) || 1, 75) }))
+  const totalRevenue = fieldYields.reduce((s, f) => s + (f.yieldData?.marketValueRs || 0), 0)
+  const totalYield = fieldYields.reduce((s, f) => s + (f.yieldData?.yieldTonnes || 0), 0)
+
+  const filteredCrops = CROP_MARKET_DATA.filter(c =>
+    (category === 'All' || c.category === category) &&
+    c.crop.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const trendIcon = t => t === 'up' ? <TrendingUp size={14} style={{ color: 'var(--green)' }} /> : t === 'down' ? <TrendingDown size={14} style={{ color: 'var(--red)' }} /> : <Minus size={14} style={{ color: 'var(--amber)' }} />
+  const trendColor = t => t === 'up' ? 'var(--green)' : t === 'down' ? 'var(--red)' : 'var(--amber)'
 
   return (
     <div className="page">
@@ -30,70 +42,190 @@ export default function YieldPricePage() {
         </div>
       </div>
 
-      {!loading && fields.length > 0 && (
-        <div className="stats-grid" style={{ marginBottom: 24 }}>
-          <div className="stat-card stat-blue"><div className="stat-icon"><TrendingUp /></div><div className="stat-content"><p className="stat-label">{t('totalYieldTonnes')}</p><p className="stat-value">{totalYield.toFixed(1)} <span className="stat-unit">{t('tonnesUnit')}</span></p></div></div>
-          <div className="stat-card stat-green"><div className="stat-icon"><BarChart3 /></div><div className="stat-content"><p className="stat-label">{t('marketValueTotal')}</p><p className="stat-value">{formatRupees(totalRevenue)}</p><p className="stat-trend">{t('mspSource')}</p></div></div>
-          <div className="stat-card stat-purple"><div className="stat-icon"><Sprout /></div><div className="stat-content"><p className="stat-label">{t('fieldsTracked')}</p><p className="stat-value">{fields.length} <span className="stat-unit">{t('fields')}</span></p></div></div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        {TABS.map(tb => (
+          <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb ? 'var(--green)' : 'var(--bg2)', color: tab === tb ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
+            {TAB_LABELS[tb][lang === 'kn' ? 1 : 0]}
+          </button>
+        ))}
+      </div>
+
+      {/* OVERVIEW TAB */}
+      {tab === 'overview' && (
+        <>
+          <div className="stats-grid" style={{ marginBottom: 24 }}>
+            <div className="stat-card stat-blue"><div className="stat-icon"><TrendingUp /></div><div className="stat-content"><p className="stat-label">{t('totalYieldTonnes')}</p><p className="stat-value">{loading ? '—' : totalYield.toFixed(1)} <span className="stat-unit">{t('tonnesUnit')}</span></p></div></div>
+            <div className="stat-card stat-green"><div className="stat-icon"><BarChart3 /></div><div className="stat-content"><p className="stat-label">{t('marketValueTotal')}</p><p className="stat-value">{loading ? '—' : formatRs(totalRevenue)}</p><p className="stat-trend">{t('mspSource')}</p></div></div>
+            <div className="stat-card stat-purple"><div className="stat-icon"><Sprout /></div><div className="stat-content"><p className="stat-label">{t('fieldsTracked')}</p><p className="stat-value">{fields.length} <span className="stat-unit">{t('fields')}</span></p></div></div>
+          </div>
+          <div className="glass-card">
+            <div className="card-header"><h3>📊 Market Overview — {CROP_MARKET_DATA.length} Crops Tracked</h3></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+              {CATEGORIES.map(cat => {
+                const crops = CROP_MARKET_DATA.filter(c => c.category === cat)
+                const avgMSP = Math.round(crops.reduce((s, c) => s + c.mspRs, 0) / crops.length)
+                const upCount = crops.filter(c => c.forecastTrend === 'up').length
+                return (
+                  <div key={cat} onClick={() => { setCategory(cat); setTab('prices') }} style={{ padding: '14px', background: 'var(--bg2)', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border2)', transition: 'border 0.2s' }}>
+                    <p style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{cat}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text2)' }}>{crops.length} crops</p>
+                    <p style={{ fontSize: 11, color: 'var(--green)', marginTop: 4 }}>↑ {upCount} bullish</p>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Avg MSP ₹{avgMSP}/qtl</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* CROP PRICES TAB */}
+      {tab === 'prices' && (
+        <>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search crop..." style={{ paddingLeft: 30, width: '100%' }} />
+            </div>
+            <select value={category} onChange={e => setCategory(e.target.value)} style={{ minWidth: 140 }}>
+              <option value="All">All Categories</option>
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="fields-grid">
+            {filteredCrops.map(c => (
+              <div key={c.crop} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 800 }}>{c.crop}</h3>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg2)', padding: '2px 8px', borderRadius: 6 }}>{c.category}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--blue)' }}>₹{c.apmc?.toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>APMC {c.currency}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[
+                    ['MSP 2024-25', `₹${c.mspRs?.toLocaleString()}/qtl`],
+                    ['Yield/Ha', `${c.yieldPerHa} t/ha`],
+                    ['High Season', `₹${c.highSeasonPrice?.toLocaleString()}`],
+                    ['Peak Month', c.highSeason],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px' }}>
+                      <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2 }}>{k}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ flex: 1, height: 6, background: 'var(--bg2)', borderRadius: 3, overflow: 'hidden', alignSelf: 'center' }}>
+                    <div style={{ width: `${Math.min(100, ((c.apmc - c.lowSeasonPrice) / (c.highSeasonPrice - c.lowSeasonPrice + 1)) * 100)}%`, height: '100%', background: 'var(--blue)', borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>₹{c.lowSeasonPrice?.toLocaleString()} → ₹{c.highSeasonPrice?.toLocaleString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* PRICE FORECAST TAB */}
+      {tab === 'forecast' && (
+        <div className="fields-grid">
+          {CROP_MARKET_DATA.map(c => (
+            <div key={c.crop} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 10, border: `1.5px solid ${c.forecastTrend === 'up' ? 'var(--green)' : c.forecastTrend === 'down' ? 'var(--red)' : 'var(--border2)'}30` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: 15, fontWeight: 800 }}>{c.crop}</h3>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{c.category}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: c.forecastTrend === 'up' ? 'var(--green-light)' : c.forecastTrend === 'down' ? 'var(--red-light)' : 'var(--amber-light)', borderRadius: 10 }}>
+                  {trendIcon(c.forecastTrend)}
+                  <span style={{ fontSize: 12, fontWeight: 800, color: trendColor(c.forecastTrend) }}>{c.forecast}</span>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                {[
+                  ['Current', `₹${c.apmc?.toLocaleString()}`, 'var(--text)'],
+                  ['Low Season', `₹${c.lowSeasonPrice?.toLocaleString()}`, 'var(--red)'],
+                  ['High Season', `₹${c.highSeasonPrice?.toLocaleString()}`, 'var(--green)'],
+                ].map(([k, v, col]) => (
+                  <div key={k} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{k}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: col }}>{v}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text3)' }}>/qtl</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', padding: '6px 10px', background: 'var(--bg2)', borderRadius: 8 }}>
+                📅 Best selling window: <strong style={{ color: 'var(--amber)' }}>{c.highSeason}</strong>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {loading ? <div className="center-loader"><Loader2 size={40} className="spin" /></div>
-        : fields.length === 0 ? (
-          <div className="empty-page"><BarChart3 size={64} /><h2>{t('noFieldsYet')}</h2><p>{t('yieldEmptyDesc')}</p></div>
-        ) : (
-          <div className="fields-grid">
-            {allYields.map(f => {
-              const { yieldData } = f
-              if (!yieldData) return null
-              return (
-                <div key={f.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Sprout size={18} color="var(--green)" />
-                      <div>
-                        <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>{f.name}</h3>
-                        <span style={{ fontSize: 12, color: 'var(--text2)' }}>{f.crop_type} · {f.area_hectares} ha · {f.soil_type}</span>
+      {/* MY YIELD TAB */}
+      {tab === 'myYield' && (
+        loading ? <div className="center-loader"><Loader2 size={40} className="spin" /></div> :
+        fields.length === 0 ? <div className="empty-page"><Sprout size={64} /><h2>{t('noFieldsYet')}</h2><p>{t('yieldEmptyDesc')}</p></div> : (
+          <>
+            <div className="stats-grid" style={{ marginBottom: 24 }}>
+              <div className="stat-card stat-blue"><div className="stat-icon"><TrendingUp /></div><div className="stat-content"><p className="stat-label">{t('totalYieldTonnes')}</p><p className="stat-value">{totalYield.toFixed(1)} <span className="stat-unit">{t('tonnesUnit')}</span></p></div></div>
+              <div className="stat-card stat-green"><div className="stat-icon"><BarChart3 /></div><div className="stat-content"><p className="stat-label">{t('marketValueTotal')}</p><p className="stat-value">{formatRs(totalRevenue)}</p></div></div>
+            </div>
+            <div className="fields-grid">
+              {fieldYields.map(f => {
+                const { yieldData } = f
+                const marketInfo = CROP_MARKET_DATA.find(c => c.crop === f.crop_type)
+                if (!yieldData) return null
+                return (
+                  <div key={f.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Sprout size={18} color="var(--green)" />
+                        <div>
+                          <h3 style={{ fontSize: 16, fontWeight: 800 }}>{f.name}</h3>
+                          <span style={{ fontSize: 12, color: 'var(--text2)' }}>{f.crop_type} · {f.area_hectares}ha</span>
+                        </div>
                       </div>
+                      <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--green)' }}>{formatRs(yieldData.marketValueRs)}</span>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--blue-light)', color: 'var(--blue)', padding: '4px 10px', borderRadius: 8 }}>{f.growth_stage || 'Vegetative'}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                    {[
-                      { label: t('estYield'), value: `${yieldData.yieldTonnes}t`, sub: `${yieldData.yieldPerHa} t/ha`, color: 'var(--green)' },
-                      { label: t('marketValue'), value: formatRupees(yieldData.marketValueRs), sub: `₹${yieldData.pricePerQuintal?.toLocaleString()}/qtl`, color: 'var(--blue)' },
-                      { label: t('area'), value: `${f.area_hectares} ha`, sub: `${(f.area_hectares * 2.47).toFixed(1)} acres`, color: 'var(--amber)' },
-                    ].map(({ label, value, sub, color }) => (
-                      <div key={label} className="rec-metric" style={{ background: 'var(--bg2)', borderRadius: 12, padding: '12px 14px' }}>
-                        <div className="rec-metric-value" style={{ color, fontSize: 18 }}>{value}</div>
-                        <div className="rec-metric-label" style={{ marginTop: 2 }}>{label}</div>
-                        <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{sub}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                      {[
+                        [t('estYield'), `${yieldData.yieldTonnes}t`, 'var(--green)'],
+                        [t('quintalPrice'), `₹${yieldData.pricePerQuintal?.toLocaleString()}`, 'var(--blue)'],
+                        [t('totalRevenue'), formatRs(yieldData.marketValueRs), 'var(--amber)'],
+                      ].map(([k, v, col]) => (
+                        <div key={k} className="rec-metric" style={{ background: 'var(--bg2)', borderRadius: 10, padding: '10px 12px' }}>
+                          <div className="rec-metric-value" style={{ color: col, fontSize: 16 }}>{v}</div>
+                          <div className="rec-metric-label">{k}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {marketInfo && (
+                      <div style={{ padding: '8px 12px', background: marketInfo.forecastTrend === 'up' ? 'var(--green-light)' : 'var(--amber-light)', borderRadius: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {trendIcon(marketInfo.forecastTrend)}
+                        <span style={{ color: trendColor(marketInfo.forecastTrend), fontWeight: 700 }}>Price Forecast: {marketInfo.forecast}</span>
+                        <span style={{ color: 'var(--text3)', marginLeft: 'auto' }}>Best: {marketInfo.highSeason}</span>
                       </div>
-                    ))}
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {[[t('quintalPrice'), `₹${yieldData.pricePerQuintal?.toLocaleString()}/qtl`], [t('totalQuintals'), `${(yieldData.yieldTonnes * 10).toFixed(0)} qtl`], [t('priceSource'), yieldData.priceSource]].map(([k, v]) => (
+                        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '5px 0', borderBottom: '1px solid var(--border2)' }}>
+                          <span style={{ color: 'var(--text2)' }}>{k}</span><span style={{ fontWeight: 700 }}>{v}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <div style={{ padding: '8px 12px', background: 'rgba(0,180,255,0.06)', borderRadius: 10, fontSize: 12, color: 'var(--text2)', borderLeft: '3px solid var(--blue)' }}>
-                    <strong style={{ color: 'var(--blue)' }}>{t('priceSource')}:</strong> {yieldData.priceSource} · {t('yieldNote')}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {[
-                      [t('quintalPrice'), `₹${yieldData.pricePerQuintal?.toLocaleString()}/qtl`],
-                      [t('totalQuintals'), `${(yieldData.yieldTonnes * 10).toFixed(0)} qtl`],
-                      [t('totalRevenue'), `₹${yieldData.marketValueRs?.toLocaleString()}`],
-                    ].map(([k, v]) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 0', borderBottom: '1px solid var(--border2)' }}>
-                        <span style={{ color: 'var(--text2)' }}>{k}</span>
-                        <span style={{ fontWeight: 700 }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+                )
+              })}
+            </div>
+          </>
+        )
+      )}
     </div>
   )
 }
