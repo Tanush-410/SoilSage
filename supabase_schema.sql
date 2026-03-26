@@ -1,4 +1,4 @@
--- AquaAI Smart Irrigation System
+-- SoilSage Smart Irrigation System
 -- Run this SQL in Supabase Dashboard → SQL Editor
 
 -- 1. Profiles (linked to auth.users)

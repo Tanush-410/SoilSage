@@ -50,7 +50,7 @@ export default function Layout() {
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="logo-icon" style={{ width: 36, height: 36, borderRadius: 10 }}><Droplets size={18} /></div>
-            {!collapsed && <span className="sidebar-brand">AquaAI</span>}
+            {!collapsed && <span className="sidebar-brand">SoilSage</span>}
           </div>
           <button className="sidebar-toggle" onClick={() => setCollapsed(p => !p)}>
             {collapsed ? <Menu size={18} /> : <X size={18} />}
@@ -99,11 +99,7 @@ export default function Layout() {
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
           </div>
-          <div className="topbar-right">
-            <div className="status-badge">
-              <Wifi size={12} /> FAO-56 Engine Online
-            </div>
-          </div>
+
         </div>
         <div className="page-content">
           <PageComponent onNavigate={navigateTo} />

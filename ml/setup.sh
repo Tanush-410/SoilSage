@@ -1,8 +1,8 @@
 #!/bin/bash
-# AquaAI ML Pipeline Setup Script
+# SoilSage ML Pipeline Setup Script
 # Run this once to set up and train the model
 
-echo "=== AquaAI Irrigation ML Model Setup ==="
+echo "=== SoilSage Irrigation ML Model Setup ==="
 echo ""
 
 # Install Python dependencies

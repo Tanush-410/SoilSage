@@ -17,7 +17,7 @@ function AppRoot() {
           <Droplets size={28} />
         </div>
         <Loader2 size={24} className="spin" />
-        <p style={{ fontSize: 14, color: 'var(--text2)' }}>Initialising AquaAI...</p>
+        <p style={{ fontSize: 14, color: 'var(--text2)' }}>Initialising SoilSage...</p>
       </div>
     )
   }

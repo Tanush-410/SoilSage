@@ -32,7 +32,7 @@ export default function AuthPage() {
         <div className="auth-logo">
           <div className="logo-icon"><Droplets size={28} /></div>
           <div>
-            <h1 className="logo-title">AquaAI</h1>
+            <h1 className="logo-title">SoilSage</h1>
             <p className="logo-sub">Smart Irrigation System</p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function AuthPage() {
           </div>
           {error && <div className="auth-error">{error}</div>}
           <button type="submit" className="btn-primary btn-full" disabled={loading}>
-            {loading ? <><Loader2 size={16} className="spin" /> Processing...</> : mode === 'login' ? 'Sign In to AquaAI' : 'Create Account'}
+            {loading ? <><Loader2 size={16} className="spin" /> Processing...</> : mode === 'login' ? 'Sign In to SoilSage' : 'Create Account'}
           </button>
         </form>
         <p className="auth-footer">

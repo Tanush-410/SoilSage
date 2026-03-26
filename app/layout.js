@@ -1,8 +1,14 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'AquaAI — Smart Irrigation System',
+  title: 'SoilSage — Smart Irrigation System',
   description: 'AI-powered FAO-56 based smart irrigation for precision agriculture',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({ children }) {
