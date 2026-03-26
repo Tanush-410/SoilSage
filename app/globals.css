@@ -159,6 +159,7 @@ img { display: block; max-width: 100%; }
   background: var(--bg); border: 1.5px solid var(--border2);
   border-radius: var(--radius-sm); padding: 10px 14px;
   color: var(--text); font-size: 14px; font-weight: 500; transition: border-color 0.2s; outline: none;
+  width: 100%; min-width: 0;
 }
 .form-group input:focus, .form-group select:focus { border-color: var(--green); background: var(--green-light); }
 .form-group select option { background: #fff; color: var(--text); }
