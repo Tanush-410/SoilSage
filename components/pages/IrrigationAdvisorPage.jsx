@@ -190,7 +190,7 @@ export default function IrrigationAdvisorPage() {
               </div>
               <div>
                 <p style={{ fontSize: 10, color: colors.color, opacity: 0.7, fontWeight: 700, marginBottom: 4 }}>Water Needed</p>
-                <p style={{ fontSize: 26, fontWeight: 800, color: colors.color, margin: 0 }}>{(recommendation.waterNeededLiters / 1000).toFixed(1)}k L</p>
+                <p style={{ fontSize: 26, fontWeight: 800, color: colors.color, margin: 0 }}>{(recommendation.waterAmountGallons || recommendation.waterAmountLiters * 0.264172).toLocaleString('en-IN', { maximumFractionDigits: 1 })} Gal</p>
               </div>
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function IrrigationAdvisorPage() {
                   <div key={i} style={{ padding: 12, borderBottom: i < irrigationHistory.length - 1 ? '1px solid #d1e3bb' : 'none' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '120px 80px 80px', gap: 12 }}>
                       <strong>{new Date(log.irrigated_date).toLocaleDateString()}</strong>
-                      <span>{(log.water_used_liters || 0) / 1000}k L</span>
+                      <span>{((log.water_used_liters || 0) * 0.264172).toFixed(0)} Gal</span>
                       <span>{log.method}</span>
                     </div>
                   </div>

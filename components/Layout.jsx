@@ -13,6 +13,8 @@ import YieldPricePage from './pages/YieldPricePage'
 import SoilHealthPage from './pages/SoilHealthPage'
 import PestControlPage from './pages/PestControlPage'
 import IrrigationAdvisorPage from './pages/IrrigationAdvisorPage'
+import BenefitsPage from './pages/BenefitsPage'
+import EmergencyHelpPage from './pages/EmergencyHelpPage'
 
 export default function Layout() {
   const { t, lang, setLang, languages } = useTranslation()
@@ -31,6 +33,8 @@ export default function Layout() {
     { id: 'soil-health', label: t('soilHealth'), icon: Activity },
     { id: 'pest-control', label: 'Pest Monitor', icon: Bug },
     { id: 'advisor', label: t('aiAdvisor'), icon: Brain },
+    { id: 'benefits', label: 'Government Benefits', icon: BarChart3 },
+    { id: 'emergency', label: 'Emergency Help', icon: Brain },
     { id: 'schedule', label: t('schedule'), icon: Calendar },
     { id: 'history', label: t('history'), icon: History },
   ]
@@ -43,6 +47,8 @@ export default function Layout() {
     'soil-health': SoilHealthPage,
     'pest-control': PestControlPage,
     advisor: Advisor,
+    benefits: BenefitsPage,
+    emergency: EmergencyHelpPage,
     schedule: Schedule,
     history: HistoryPage,
     settings: SettingsPage,

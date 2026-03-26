@@ -7,13 +7,21 @@ import { useTranslation } from '../../lib/i18n'
 import { Droplets, Sprout, Brain, TrendingUp, CheckCircle, Loader2, MapPin, Thermometer, Wind, CloudRain } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-function getSavedLiters(rec) {
+function getSavedGallons(rec) {
   const details = rec?.recommendation_json
   const savedText = details?.waterSaved || ''
+  const gallonsMatch = savedText.match(/\(([\d,]+) Gal saved\)/i)
+  if (gallonsMatch) return Number.parseInt(gallonsMatch[1].replace(/,/g, ''), 10) || 0
+  
+  // Fallback: try old format with liters and convert
   const litersMatch = savedText.match(/\(([\d,]+)L saved\)/i)
-  if (litersMatch) return Number.parseInt(litersMatch[1].replace(/,/g, ''), 10) || 0
+  if (litersMatch) {
+    const liters = Number.parseInt(litersMatch[1].replace(/,/g, ''), 10)
+    return Math.round(liters * 0.264172)
+  }
+  
   const pctMatch = savedText.match(/(\d+(?:\.\d+)?)%/)
-  const waterAmount = Number(details?.waterAmountLiters ?? rec?.water_amount_liters ?? 0)
+  const waterAmount = Number(details?.waterAmountGallons ?? (details?.waterAmountLiters ? details.waterAmountLiters * 0.264172 : rec?.water_amount_liters ? rec.water_amount_liters * 0.264172 : 0))
   if (pctMatch && waterAmount > 0) {
     const savedPct = Number.parseFloat(pctMatch[1])
     if (savedPct > 0 && savedPct < 100) return Math.round(waterAmount * (savedPct / (100 - savedPct)))
@@ -41,7 +49,7 @@ export default function Dashboard({ onNavigate }) {
       const { data: recs } = await supabase.from('recommendations').select('*, fields(name, crop_type)').in('field_id', f.map(x => x.id)).order('created_at', { ascending: false })
       const allRecs = recs || []
       setRecentRecs(allRecs.slice(0, 5))
-      const waterSaved = allRecs.reduce((sum, rec) => sum + getSavedLiters(rec), 0)
+      const waterSaved = allRecs.reduce((sum, rec) => sum + getSavedGallons(rec), 0)
       const effValues = allRecs.map(r => Number(r.efficiency_score)).filter(Number.isFinite)
       setStats({ totalFields: f.length, waterSaved, efficiency: effValues.length ? Math.round(effValues.reduce((s, v) => s + v, 0) / effValues.length) : 0, alerts: allRecs.filter(r => r.urgency === 'critical' || r.urgency === 'high').length })
     } else { setRecentRecs([]); setStats(baseStats) }
@@ -72,7 +80,7 @@ export default function Dashboard({ onNavigate }) {
       <div className="stats-grid">
         {[
           { icon: <Sprout />, label: t('totalFields'), value: stats.totalFields, unit: t('fields'), color: 'green' },
-          { icon: <Droplets />, label: t('waterSaved'), value: stats.waterSaved.toLocaleString(), unit: t('litres'), color: 'blue', trend: t('vsFlood') },
+          { icon: <Droplets />, label: t('waterSaved'), value: stats.waterSaved.toLocaleString(), unit: 'gallons', color: 'blue', trend: t('vsFlood') },
           { icon: <TrendingUp />, label: t('efficiency'), value: stats.efficiency, unit: '%', color: 'purple', trend: t('faoOptimised') },
           { icon: <CheckCircle />, label: t('activeAlerts'), value: stats.alerts, unit: t('alerts'), color: 'orange' },
         ].map((s, i) => (
