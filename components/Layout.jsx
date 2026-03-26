@@ -12,6 +12,7 @@ import SettingsPage from './pages/SettingsPage'
 import YieldPricePage from './pages/YieldPricePage'
 import SoilHealthPage from './pages/SoilHealthPage'
 import PestControlPage from './pages/PestControlPage'
+import IrrigationAdvisorPage from './pages/IrrigationAdvisorPage'
 
 export default function Layout() {
   const { t, lang, setLang, languages } = useTranslation()
@@ -25,6 +26,7 @@ export default function Layout() {
   const navItems = [
     { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
     { id: 'fields', label: t('myFields'), icon: Sprout },
+    { id: 'irrigation', label: 'Irrigation Advisor', icon: Droplets },
     { id: 'yield-price', label: t('yieldPrice'), icon: BarChart3 },
     { id: 'soil-health', label: t('soilHealth'), icon: Activity },
     { id: 'pest-control', label: 'Pest Monitor', icon: Bug },
@@ -36,6 +38,7 @@ export default function Layout() {
   const pages = {
     dashboard: Dashboard,
     fields: Fields,
+    irrigation: IrrigationAdvisorPage,
     'yield-price': YieldPricePage,
     'soil-health': SoilHealthPage,
     'pest-control': PestControlPage,
