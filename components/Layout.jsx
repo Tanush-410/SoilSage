@@ -1,17 +1,23 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, Wifi } from 'lucide-react'
+import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, BarChart3, Bug } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Fields from './pages/Fields'
 import Advisor from './pages/Advisor'
 import Schedule from './pages/Schedule'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import YieldPricePrediction from './pages/YieldPricePrediction'
+import PestControl from './pages/PestControl'
+import SoilHealthDashboard from './pages/SoilHealthDashboard'
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'fields', label: 'My Fields', icon: Sprout },
+  { id: 'yield-price', label: 'Yield & Price', icon: BarChart3 },
+  { id: 'pest-control', label: 'Pest Control', icon: Bug },
+  { id: 'soil-health', label: 'Soil Health', icon: Droplets },
   { id: 'advisor', label: 'AI Advisor', icon: Brain },
   { id: 'schedule', label: 'Schedule', icon: Calendar },
   { id: 'history', label: 'History', icon: History },
@@ -21,9 +27,31 @@ export default function Layout() {
   const [page, setPage] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [selectedField, setSelectedField] = useState({
+    id: 1,
+    name: 'Main Field',
+    area: 5,
+    crop: 'Rice',
+    status: 'Healthy',
+    soilType: 'Loamy',
+    ph: 6.5,
+    nitrogen: 45,
+    phosphorus: 35,
+    potassium: 200,
+  })
   const { profile, signOut } = useAuth()
 
-  const pages = { dashboard: Dashboard, fields: Fields, advisor: Advisor, schedule: Schedule, history: HistoryPage, settings: SettingsPage }
+  const pages = { 
+    dashboard: Dashboard, 
+    fields: Fields, 
+    'yield-price': YieldPricePrediction,
+    'pest-control': PestControl,
+    'soil-health': SoilHealthDashboard,
+    advisor: Advisor, 
+    schedule: Schedule, 
+    history: HistoryPage, 
+    settings: SettingsPage 
+  }
   const PageComponent = pages[page] || Dashboard
 
   useEffect(() => {
@@ -102,7 +130,7 @@ export default function Layout() {
 
         </div>
         <div className="page-content">
-          <PageComponent onNavigate={navigateTo} />
+          <PageComponent onNavigate={navigateTo} field={selectedField} />
         </div>
       </main>
     </div>
