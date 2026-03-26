@@ -29,8 +29,9 @@
   --shadow-lg: 0 8px 28px rgba(0,0,0,0.10);
 }
 
+html { font-size: clamp(13px, 1.4vw, 16px); }
 html, body { height: 100%; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; font-size: clamp(13px, 1.4vw, 15px); }
 input, select, textarea, button { font-family: var(--font); }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -120,8 +121,8 @@ img { display: block; max-width: 100%; }
 /* ===== PAGE ===== */
 .page { max-width: 1400px; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
-.page-title { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; }
-.page-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+.page-title { font-size: clamp(18px, 3vw, 26px); font-weight: 800; color: var(--text); line-height: 1.2; }
+.page-sub { font-size: clamp(12px, 1.3vw, 14px); color: var(--text2); margin-top: 4px; }
 
 /* ===== BUTTONS ===== */
 .btn-primary {
@@ -150,7 +151,7 @@ img { display: block; max-width: 100%; }
 }
 .glass-card:hover { box-shadow: var(--shadow-lg); }
 .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.card-header h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+.card-header h3 { font-size: clamp(13px, 1.4vw, 15px); font-weight: 700; color: var(--text); }
 
 /* ===== AUTH ===== */
 .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; position: relative; overflow: hidden; background: linear-gradient(135deg, #e8f5ee 0%, #f0f9ff 50%, #fff7e6 100%); }
@@ -205,10 +206,10 @@ img { display: block; max-width: 100%; }
 .stat-blue .stat-icon { background: var(--blue-light); color: var(--blue); }
 .stat-purple .stat-icon { background: var(--purple-light); color: var(--purple); }
 .stat-orange .stat-icon { background: var(--amber-light); color: var(--amber); }
-.stat-label { font-size: 12px; color: var(--text2); font-weight: 600; }
-.stat-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1.2; }
-.stat-unit { font-size: 13px; color: var(--text2); font-weight: 500; }
-.stat-trend { font-size: 11px; color: var(--green); margin-top: 2px; font-weight: 600; }
+.stat-label { font-size: clamp(10px, 1.1vw, 12px); color: var(--text2); font-weight: 600; }
+.stat-value { font-size: clamp(18px, 2.2vw, 22px); font-weight: 800; color: var(--text); line-height: 1.2; }
+.stat-unit { font-size: clamp(11px, 1.2vw, 13px); color: var(--text2); font-weight: 500; }
+.stat-trend { font-size: clamp(10px, 1vw, 11px); color: var(--green); margin-top: 2px; font-weight: 600; }
 
 /* ===== DASHBOARD GRID ===== */
 .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -310,7 +311,7 @@ img { display: block; max-width: 100%; }
 
 .rec-main-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
 .rec-metric { background: var(--bg); border: 1px solid var(--border2); border-radius: 12px; padding: 14px; text-align: center; }
-.rec-metric-value { font-size: 22px; font-weight: 800; color: var(--green); }
+.rec-metric-value { font-size: clamp(18px, 2.2vw, 22px); font-weight: 800; color: var(--green); }
 .rec-metric-label { font-size: 11px; color: var(--text2); margin-top: 4px; font-weight: 600; }
 
 .schedule-table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -422,7 +423,7 @@ img { display: block; max-width: 100%; }
   }
   .page-content { padding: 18px; }
   .page-header { margin-bottom: 22px; }
-  .page-title { font-size: 22px; }
+  .page-title { font-size: clamp(17px, 2.5vw, 22px); }
   .btn-primary,
   .btn-ghost {
     justify-content: center;
@@ -473,7 +474,7 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 640px) {
-  body { font-size: 14px; }
+  body { font-size: clamp(12px, 1.3vw, 14px); }
   .auth-container { padding: 16px; align-items: flex-start; }
   .auth-card {
     margin-top: 20px;
@@ -487,7 +488,7 @@ img { display: block; max-width: 100%; }
   .logo-title { font-size: 22px; }
   .page-content { padding: 14px; }
   .page-header { gap: 12px; }
-  .page-title { font-size: 20px; }
+  .page-title { font-size: clamp(16px, 2vw, 20px); }
   .glass-card,
   .field-card,
   .stat-card {
@@ -500,7 +501,7 @@ img { display: block; max-width: 100%; }
     width: 42px;
     height: 42px;
   }
-  .stat-value { font-size: 20px; }
+  .stat-value { font-size: clamp(16px, 2vw, 20px); }
   .field-card-header,
   .field-card-footer,
   .weather-details,
