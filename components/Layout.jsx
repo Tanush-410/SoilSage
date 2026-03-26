@@ -2,13 +2,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTranslation } from '../lib/i18n'
-import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, Globe } from 'lucide-react'
+import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, Globe, BarChart3, Bug, Activity } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Fields from './pages/Fields'
 import Advisor from './pages/Advisor'
 import Schedule from './pages/Schedule'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
+import YieldPricePage from './pages/YieldPricePage'
+import SoilHealthPage from './pages/SoilHealthPage'
+import PestControlPage from './pages/PestControlPage'
 
 export default function Layout() {
   const { t, lang, setLang, languages } = useTranslation()
@@ -22,6 +25,9 @@ export default function Layout() {
   const navItems = [
     { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
     { id: 'fields', label: t('myFields'), icon: Sprout },
+    { id: 'yield-price', label: t('yieldPrice'), icon: BarChart3 },
+    { id: 'soil-health', label: t('soilHealth'), icon: Activity },
+    { id: 'pest-control', label: 'Pest Monitor', icon: Bug },
     { id: 'advisor', label: t('aiAdvisor'), icon: Brain },
     { id: 'schedule', label: t('schedule'), icon: Calendar },
     { id: 'history', label: t('history'), icon: History },
@@ -30,6 +36,9 @@ export default function Layout() {
   const pages = {
     dashboard: Dashboard,
     fields: Fields,
+    'yield-price': YieldPricePage,
+    'soil-health': SoilHealthPage,
+    'pest-control': PestControlPage,
     advisor: Advisor,
     schedule: Schedule,
     history: HistoryPage,
