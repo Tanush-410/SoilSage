@@ -20,9 +20,13 @@ bundle = None
 def load_model():
     global bundle
     if not os.path.exists(MODEL_PATH):
-        raise FileNotFoundError(f"Model not found at {MODEL_PATH}. Run train_model.py first.")
+        print(f"Warning: Model not found at {MODEL_PATH}. Run train_model.py first.")
+        return
     bundle = joblib.load(MODEL_PATH)
     print("✅ Model bundle loaded successfully")
+
+# Load model immediately so gunicorn finds it in production
+load_model()
 
 FEATURES = [
     "soil_moisture", "soil_ph", "soil_temperature",
