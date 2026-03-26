@@ -2,7 +2,32 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { CROP_DATABASE, SOIL_TYPES, GROWTH_STAGES } from '../../lib/crops'
-import { Plus, Pencil, Trash2, Sprout, MapPin, X, Loader2 } from 'lucide-react'
+import { estimateYield, formatRupees } from '../../lib/yield-calculator'
+import { Plus, Pencil, Trash2, Sprout, MapPin, X, Loader2, TrendingUp, Activity } from 'lucide-react'
+
+/** Compute 0-100 soil health score from NPK, pH, moisture */
+function soilHealthScore(f) {
+  const ph = parseFloat(f.soil_ph) || 6.5
+  const n = parseFloat(f.nitrogen) || 40
+  const p = parseFloat(f.phosphorus) || 30
+  const k = parseFloat(f.potassium) || 35
+  const m = parseFloat(f.soil_moisture) || 60
+
+  const phScore = (ph >= 6.0 && ph <= 7.5) ? 100 : (ph >= 5.5 && ph <= 8.0) ? 65 : 30
+  const nScore = Math.min(100, (n / 60) * 100)
+  const pScore = Math.min(100, (p / 45) * 100)
+  const kScore = Math.min(100, (k / 50) * 100)
+  const mScore = (m >= 40 && m <= 70) ? 100 : (m >= 25 && m <= 85) ? 60 : 25
+
+  return Math.round(phScore * 0.30 + nScore * 0.25 + pScore * 0.20 + kScore * 0.15 + mScore * 0.10)
+}
+
+function healthLabel(score) {
+  if (score >= 80) return { label: 'Excellent', color: 'var(--green)', bg: 'var(--green-light)' }
+  if (score >= 60) return { label: 'Good', color: '#16a34a', bg: '#dcfce7' }
+  if (score >= 40) return { label: 'Fair', color: 'var(--amber)', bg: 'var(--amber-light)' }
+  return { label: 'Poor', color: 'var(--red)', bg: 'var(--red-light)' }
+}
 
 export default function Fields() {
   const [fields, setFields] = useState([])
@@ -53,7 +78,7 @@ export default function Fields() {
   return (
     <div className="page">
       <div className="page-header">
-        <div><h1 className="page-title">My Fields</h1><p className="page-sub">Manage fields and IoT soil sensor data</p></div>
+        <div><h1 className="page-title">My Fields</h1><p className="page-sub">Manage fields · Soil health · Yield & market value</p></div>
         <button className="btn-primary" onClick={openAdd}><Plus size={16} /> Add Field</button>
       </div>
 
@@ -69,21 +94,57 @@ export default function Fields() {
             {fields.map(f => {
               const moist = f.soil_moisture || 60
               const color = moist < 30 ? '#ef4444' : moist < 60 ? '#f59e0b' : '#00e87a'
+              const health = soilHealthScore(f)
+              const { label: hLabel, color: hColor, bg: hBg } = healthLabel(health)
+              const yieldData = estimateYield(f.crop_type, f.area_hectares || 1, 75)
+
               return (
                 <div key={f.id} className="field-card">
                   <div className="field-card-header">
-                    <div className="field-card-title"><Sprout size={18} color="#00e87a" /><h3>{f.name}</h3></div>
+                    <div className="field-card-title"><Sprout size={18} color="var(--green)" /><h3>{f.name}</h3></div>
                     <div className="field-card-actions">
                       <button onClick={() => openEdit(f)}><Pencil size={14} /></button>
                       <button className="danger" onClick={() => del(f.id)}><Trash2 size={14} /></button>
                     </div>
                   </div>
+
                   <div className="field-info-grid">
                     {[['Crop', f.crop_type], ['Area', `${f.area_hectares} ha`], ['Soil', f.soil_type], ['Stage', f.growth_stage || 'Vegetative']].map(([l, v]) => (
                       <div key={l} className="info-row"><span className="info-label">{l}</span><span className="info-value">{v}</span></div>
                     ))}
                   </div>
+
                   {f.location && <div className="field-location"><MapPin size={12} />{f.location}</div>}
+
+                  {/* Soil Health Score */}
+                  <div style={{ marginBottom: 10, padding: '8px 12px', background: hBg, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: `1px solid ${hColor}30` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Activity size={14} color={hColor} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: hColor }}>Soil Health</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 80, height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ width: `${health}%`, height: '100%', background: hColor, borderRadius: 3 }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: hColor }}>{health}/100</span>
+                      <span style={{ fontSize: 11, color: hColor, fontWeight: 600 }}>{hLabel}</span>
+                    </div>
+                  </div>
+
+                  {/* Yield & Market Value */}
+                  {f.crop_type && (
+                    <div style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--blue-light)', borderRadius: 10, border: '1px solid #bfdbfe30', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <TrendingUp size={14} color="var(--blue)" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)' }}>Est. Yield</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--blue)' }}>{yieldData.yieldTonnes}t </span>
+                        <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 600 }}>· {formatRupees(yieldData.marketValueRs)}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="soil-metrics">
                     <div className="soil-metric">
                       <span>Moisture</span>
@@ -97,6 +158,7 @@ export default function Fields() {
                       <span>P:{f.phosphorus || 30}ppm</span>
                     </div>
                   </div>
+
                   <div className="field-card-footer">
                     <span className={`crop-water-badge ${moist < 30 ? 'critical' : moist < 60 ? 'warning' : 'ok'}`}>
                       {moist < 30 ? '⚠️ Critical' : moist < 60 ? '⚡ Monitor' : '✅ Adequate'}

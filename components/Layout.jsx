@@ -1,74 +1,57 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, BarChart3, Bug } from 'lucide-react'
+import { useTranslation } from '../lib/i18n'
+import { LayoutDashboard, Sprout, Brain, Calendar, History, LogOut, Droplets, Menu, X, ChevronRight, Settings, Globe } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Fields from './pages/Fields'
 import Advisor from './pages/Advisor'
 import Schedule from './pages/Schedule'
 import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
-import YieldPricePrediction from './pages/YieldPricePrediction'
-import PestControl from './pages/PestControl'
-import SoilHealthDashboard from './pages/SoilHealthDashboard'
-
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'fields', label: 'My Fields', icon: Sprout },
-  { id: 'yield-price', label: 'Yield & Price', icon: BarChart3 },
-  { id: 'pest-control', label: 'Pest Control', icon: Bug },
-  { id: 'soil-health', label: 'Soil Health', icon: Droplets },
-  { id: 'advisor', label: 'AI Advisor', icon: Brain },
-  { id: 'schedule', label: 'Schedule', icon: Calendar },
-  { id: 'history', label: 'History', icon: History },
-]
 
 export default function Layout() {
+  const { t, lang, setLang, languages } = useTranslation()
   const [page, setPage] = useState('dashboard')
   const [collapsed, setCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [selectedField, setSelectedField] = useState({
-    id: 1,
-    name: 'Main Field',
-    area: 5,
-    crop: 'Rice',
-    status: 'Healthy',
-    soilType: 'Loamy',
-    ph: 6.5,
-    nitrogen: 45,
-    phosphorus: 35,
-    potassium: 200,
-  })
+  const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const langRef = useRef(null)
   const { profile, signOut } = useAuth()
 
-  const pages = { 
-    dashboard: Dashboard, 
-    fields: Fields, 
-    'yield-price': YieldPricePrediction,
-    'pest-control': PestControl,
-    'soil-health': SoilHealthDashboard,
-    advisor: Advisor, 
-    schedule: Schedule, 
-    history: HistoryPage, 
-    settings: SettingsPage 
+  const navItems = [
+    { id: 'dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { id: 'fields', label: t('myFields'), icon: Sprout },
+    { id: 'advisor', label: t('aiAdvisor'), icon: Brain },
+    { id: 'schedule', label: t('schedule'), icon: Calendar },
+    { id: 'history', label: t('history'), icon: History },
+  ]
+
+  const pages = {
+    dashboard: Dashboard,
+    fields: Fields,
+    advisor: Advisor,
+    schedule: Schedule,
+    history: HistoryPage,
+    settings: SettingsPage,
   }
   const PageComponent = pages[page] || Dashboard
 
   useEffect(() => {
     if (!mobileNavOpen) return
-
-    const handleResize = () => {
-      if (window.innerWidth > 900) setMobileNavOpen(false)
-    }
-
+    const handleResize = () => { if (window.innerWidth > 900) setMobileNavOpen(false) }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [mobileNavOpen])
 
-  function navigateTo(nextPage) {
-    setPage(nextPage)
-    setMobileNavOpen(false)
-  }
+  // Close lang menu on outside click
+  useEffect(() => {
+    function handler(e) { if (langRef.current && !langRef.current.contains(e.target)) setLangMenuOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  function navigateTo(nextPage) { setPage(nextPage); setMobileNavOpen(false) }
 
   return (
     <div className="app-shell">
@@ -105,13 +88,13 @@ export default function Layout() {
               </div>
             </div>
           )}
-          <button className="nav-item" onClick={() => navigateTo('settings')} title="Settings">
+          <button className="nav-item" onClick={() => navigateTo('settings')} title={t('settings')}>
             <Settings size={18} />
-            {!collapsed && <span>Settings</span>}
+            {!collapsed && <span>{t('settings')}</span>}
           </button>
-          <button className="nav-item danger" onClick={() => { setMobileNavOpen(false); signOut() }} title="Logout">
+          <button className="nav-item danger" onClick={() => { setMobileNavOpen(false); signOut() }} title={t('signOut')}>
             <LogOut size={18} />
-            {!collapsed && <span>Sign Out</span>}
+            {!collapsed && <span>{t('signOut')}</span>}
           </button>
         </div>
       </aside>
@@ -128,9 +111,60 @@ export default function Layout() {
             </span>
           </div>
 
+          {/* Language selector — government-website style, top-right */}
+          <div ref={langRef} style={{ position: 'relative', marginLeft: 'auto' }}>
+            <button
+              onClick={() => setLangMenuOpen(p => !p)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'var(--green)', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+                fontWeight: 700, fontSize: 13, fontFamily: 'var(--font)',
+                boxShadow: '0 2px 8px rgba(45,138,78,0.25)',
+              }}
+              aria-label="Change language"
+            >
+              <Globe size={15} />
+              <span>{languages[lang]?.name}</span>
+              <span style={{ fontSize: 10, opacity: 0.75 }}>▾</span>
+            </button>
+
+            {langMenuOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 500,
+                background: '#fff', border: '1px solid var(--border2)',
+                borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.13)',
+                minWidth: 180, overflow: 'hidden',
+              }}>
+                <div style={{ padding: '8px 14px 6px', fontSize: 10, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                  {t('language')}
+                </div>
+                {Object.entries(languages).map(([code, { name, flag }]) => (
+                  <button
+                    key={code}
+                    onClick={() => { setLang(code); setLangMenuOpen(false) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      width: '100%', padding: '10px 16px', border: 'none', cursor: 'pointer',
+                      background: lang === code ? 'var(--green-light)' : '#fff',
+                      color: lang === code ? 'var(--green)' : 'var(--text)',
+                      fontSize: 14, fontWeight: lang === code ? 700 : 500,
+                      fontFamily: 'var(--font)', textAlign: 'left',
+                      borderLeft: lang === code ? '3px solid var(--green)' : '3px solid transparent',
+                    }}
+                  >
+                    <span>{flag}</span>
+                    <span>{name}</span>
+                    {lang === code && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
         <div className="page-content">
-          <PageComponent onNavigate={navigateTo} field={selectedField} />
+          <PageComponent onNavigate={navigateTo} />
         </div>
       </main>
     </div>

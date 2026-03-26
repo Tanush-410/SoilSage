@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { getMLPrediction } from '../../lib/ml-client'
+import { getMLPrediction, getPestPrediction } from '../../lib/ml-client'
 import { fetchWeather, geocodeCity } from '../../lib/weather'
 import { getAllCrops, CROP_DATABASE, SOIL_TYPES, GROWTH_STAGES } from '../../lib/crops'
 import { Brain, Loader2, Droplets, Clock, AlertTriangle, CheckCircle, Leaf, FlaskConical } from 'lucide-react'
@@ -11,6 +11,7 @@ export default function Advisor() {
   const [selectedField, setSelectedField] = useState(null)
   const [weather, setWeather] = useState(null)
   const [rec, setRec] = useState(null)
+  const [pestRec, setPestRec] = useState(null)
   const [loading, setLoading] = useState(false)
   const [loadingFields, setLoadingFields] = useState(true)
   const [customMode, setCustomMode] = useState(false)
@@ -30,6 +31,7 @@ export default function Advisor() {
   async function runAnalysis() {
     setLoading(true)
     setRec(null)
+    setPestRec(null)
     setError(null)
     try {
       const fieldData = customMode ? custom : selectedField
@@ -41,24 +43,24 @@ export default function Advisor() {
       const allCrops = getAllCrops()
       const cropObj = allCrops.find(c => c.name === fieldData.crop_type) || { name: fieldData.crop_type || 'Wheat', category: 'Cereals', waterNeed: 'medium', optimalMoisture: 60, id: 'wheat' }
 
-      const irrigationResult = await getMLPrediction({
-        crop: { ...cropObj, growthStage: fieldData.growth_stage || 'Vegetative' },
-        soilData: {
-          moisture: parseFloat(fieldData.soil_moisture) || 60,
-          soilType: fieldData.soil_type || 'Loamy Soil',
-          temperature: parseFloat(fieldData.soil_temperature) || 25,
-          ph: parseFloat(fieldData.soil_ph) || 6.5,
-          nitrogen: parseFloat(fieldData.nitrogen) || 40,
-          phosphorus: parseFloat(fieldData.phosphorus) || 30,
-          potassium: parseFloat(fieldData.potassium) || 35,
-          growthStage: fieldData.growth_stage || 'Vegetative',
-        },
-        weather: w,
-        fieldArea: parseFloat(fieldData.area_hectares) || 1,
-        location: loc,
-      })
+      const soilData = {
+        moisture: parseFloat(fieldData.soil_moisture) || 60,
+        soilType: fieldData.soil_type || 'Loamy Soil',
+        temperature: parseFloat(fieldData.soil_temperature) || 25,
+        ph: parseFloat(fieldData.soil_ph) || 6.5,
+        nitrogen: parseFloat(fieldData.nitrogen) || 40,
+        phosphorus: parseFloat(fieldData.phosphorus) || 30,
+        potassium: parseFloat(fieldData.potassium) || 35,
+        growthStage: fieldData.growth_stage || 'Vegetative',
+      }
+
+      const [irrigationResult, pestResult] = await Promise.all([
+        getMLPrediction({ crop: { ...cropObj, growthStage: fieldData.growth_stage || 'Vegetative' }, soilData, weather: w, fieldArea: parseFloat(fieldData.area_hectares) || 1, location: loc }),
+        Promise.resolve(getPestPrediction({ crop: cropObj, soilData, weather: w })),
+      ])
 
       setRec(irrigationResult)
+      setPestRec(pestResult)
 
       if (!customMode && selectedField?.id) {
         await supabase.from('recommendations').insert({
@@ -264,6 +266,30 @@ export default function Advisor() {
                   {rec.alerts?.map((a, i) => <div key={i} className="alert-item" style={{ borderLeftColor: a.startsWith('🔴') ? 'var(--red)' : a.startsWith('✅') ? 'var(--green)' : 'var(--amber)', background: a.startsWith('🔴') ? 'var(--red-light)' : a.startsWith('✅') ? 'var(--green-light)' : 'var(--amber-light)' }}>{a}</div>)}
                 </div>
               </div>
+
+              {pestRec && (
+                <div className="glass-card" style={{ border: `1.5px solid ${pestRec.pestAlertCode >= 2 ? '#fbd38d' : 'var(--border2)'}` }}>
+                  <div className="card-header">
+                    <h3>🐛 Pest Risk Analysis</h3>
+                    <span className={`urgency-badge urgency-${pestRec.pestAlertCode >= 3 ? 'critical' : pestRec.pestAlertCode >= 2 ? 'high' : pestRec.pestAlertCode >= 1 ? 'medium' : 'low'}`}>
+                      {pestRec.pestRiskLevel} risk
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                    <div className="rec-metric"><div className="rec-metric-value" style={{ color: pestRec.pestAlertCode >= 2 ? 'var(--amber)' : 'var(--green)' }}>{pestRec.pestRiskScore}/10</div><div className="rec-metric-label">Risk Score</div></div>
+                    <div className="rec-metric"><div className="rec-metric-value" style={{ fontSize: 14, color: 'var(--text2)' }}>{pestRec.monitoringFrequency}</div><div className="rec-metric-label">Scout Every</div></div>
+                  </div>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Based on Live Weather: {weather?.current?.humidity}% Humidity · {weather?.current?.temperature?.toFixed(0)}°C</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {pestRec.recommendations?.map((r, i) => <div key={i} className="alert-item" style={{ borderLeftColor: 'var(--amber)', background: 'var(--amber-light)', fontSize: 12 }}>{r}</div>)}
+                  </div>
+                  {pestRec.alerts?.length > 0 && (
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {pestRec.alerts.map((a, i) => <div key={i} className="alert-item" style={{ borderLeftColor: 'var(--red)', background: 'var(--red-light)', fontSize: 12 }}>{a}</div>)}
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
