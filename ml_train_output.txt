@@ -1,0 +1,14 @@
+Loading data_core.csv dataset...
+Loaded 8000 samples
+
+--- Model Evaluation on Different Splits ---
+Split 80/20 | Seed 42 | RandomForest -> Accuracy: 14.37%
+Split 80/20 | Seed 42 | GradientBoosting -> Accuracy: 14.31%
+Split 80/20 | Seed 100 | RandomForest -> Accuracy: 13.88%
+Split 80/20 | Seed 100 | GradientBoosting -> Accuracy: 13.63%
+Split 70/30 | Seed 42 | RandomForest -> Accuracy: 13.00%
+Split 70/30 | Seed 42 | GradientBoosting -> Accuracy: 14.33%
+Split 70/30 | Seed 100 | RandomForest -> Accuracy: 13.96%
+Split 70/30 | Seed 100 | GradientBoosting -> Accuracy: 13.79%
+
+======================================
