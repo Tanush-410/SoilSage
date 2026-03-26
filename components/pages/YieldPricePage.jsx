@@ -6,11 +6,8 @@ import { CROP_MARKET_DATA, CATEGORIES, formatRs } from '../../lib/crop-market-da
 import { useTranslation } from '../../lib/i18n'
 import { TrendingUp, TrendingDown, Minus, BarChart3, Sprout, Loader2, Search } from 'lucide-react'
 
-const TABS = ['overview', 'prices', 'forecast', 'myYield']
-const TAB_LABELS = { overview: ['📊 Overview', '📊 ಅವಲೋಕನ'], prices: ['🌾 Crop Prices', '🌾 ಬೆಳೆ ಬೆಲೆ'], forecast: ['📈 Price Forecast', '📈 ಬೆಲೆ ಮುನ್ಸೂಚನೆ'], myYield: ['🚜 My Yield', '🚜 ನನ್ನ ಇಳುವರಿ'] }
-
 export default function YieldPricePage() {
-  const { t, lang } = useTranslation()
+  const { t } = useTranslation()
   const [tab, setTab] = useState('overview')
   const [fields, setFields] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,8 +27,8 @@ export default function YieldPricePage() {
     c.crop.toLowerCase().includes(search.toLowerCase())
   )
 
-  const trendIcon = t => t === 'up' ? <TrendingUp size={14} style={{ color: 'var(--green)' }} /> : t === 'down' ? <TrendingDown size={14} style={{ color: 'var(--red)' }} /> : <Minus size={14} style={{ color: 'var(--amber)' }} />
-  const trendColor = t => t === 'up' ? 'var(--green)' : t === 'down' ? 'var(--red)' : 'var(--amber)'
+  const trendIcon = tr => tr === 'up' ? <TrendingUp size={14} style={{ color: 'var(--green)' }} /> : tr === 'down' ? <TrendingDown size={14} style={{ color: 'var(--red)' }} /> : <Minus size={14} style={{ color: 'var(--amber)' }} />
+  const trendColor = tr => tr === 'up' ? 'var(--green)' : tr === 'down' ? 'var(--red)' : 'var(--amber)'
 
   return (
     <div className="page">
@@ -44,9 +41,14 @@ export default function YieldPricePage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        {TABS.map(tb => (
-          <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb ? 'var(--green)' : 'var(--bg2)', color: tab === tb ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
-            {TAB_LABELS[tb][lang === 'kn' ? 1 : 0]}
+        {[
+          { id: 'overview', label: t('tabOverview') },
+          { id: 'prices', label: t('tabCropPrices') },
+          { id: 'forecast', label: t('tabForecast') },
+          { id: 'myYield', label: t('tabMyYield') },
+        ].map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb.id ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb.id ? 'var(--green)' : 'var(--bg2)', color: tab === tb.id ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
+            {tb.label}
           </button>
         ))}
       </div>
@@ -60,7 +62,7 @@ export default function YieldPricePage() {
             <div className="stat-card stat-purple"><div className="stat-icon"><Sprout /></div><div className="stat-content"><p className="stat-label">{t('fieldsTracked')}</p><p className="stat-value">{fields.length} <span className="stat-unit">{t('fields')}</span></p></div></div>
           </div>
           <div className="glass-card">
-            <div className="card-header"><h3>📊 Market Overview — {CROP_MARKET_DATA.length} Crops Tracked</h3></div>
+            <div className="card-header"><h3>📊 {t('marketOverview')} — {CROP_MARKET_DATA.length} {t('cropsTracked')}</h3></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
               {CATEGORIES.map(cat => {
                 const crops = CROP_MARKET_DATA.filter(c => c.category === cat)
@@ -69,9 +71,9 @@ export default function YieldPricePage() {
                 return (
                   <div key={cat} onClick={() => { setCategory(cat); setTab('prices') }} style={{ padding: '14px', background: 'var(--bg2)', borderRadius: 12, cursor: 'pointer', border: '1px solid var(--border2)', transition: 'border 0.2s' }}>
                     <p style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{cat}</p>
-                    <p style={{ fontSize: 12, color: 'var(--text2)' }}>{crops.length} crops</p>
-                    <p style={{ fontSize: 11, color: 'var(--green)', marginTop: 4 }}>↑ {upCount} bullish</p>
-                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Avg MSP ₹{avgMSP}/qtl</p>
+                    <p style={{ fontSize: 12, color: 'var(--text2)' }}>{crops.length} {t('fields')}</p>
+                    <p style={{ fontSize: 11, color: 'var(--green)', marginTop: 4 }}>↑ {upCount} {t('bullish')}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{t('avgMsp')} ₹{avgMSP}/qtl</p>
                   </div>
                 )
               })}
@@ -86,10 +88,10 @@ export default function YieldPricePage() {
           <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search crop..." style={{ paddingLeft: 30, width: '100%' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('searchCrop')} style={{ paddingLeft: 30, width: '100%' }} />
             </div>
             <select value={category} onChange={e => setCategory(e.target.value)} style={{ minWidth: 140 }}>
-              <option value="All">All Categories</option>
+              <option value="All">{t('allCategories')}</option>
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
@@ -108,10 +110,10 @@ export default function YieldPricePage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {[
-                    ['MSP 2024-25', `₹${c.mspRs?.toLocaleString()}/qtl`],
-                    ['Yield/Ha', `${c.yieldPerHa} t/ha`],
-                    ['High Season', `₹${c.highSeasonPrice?.toLocaleString()}`],
-                    ['Peak Month', c.highSeason],
+                    [t('msp2024'), `₹${c.mspRs?.toLocaleString()}/qtl`],
+                    [t('yieldPerHa'), `${c.yieldPerHa} t/ha`],
+                    [t('highSeasonPrice'), `₹${c.highSeasonPrice?.toLocaleString()}`],
+                    [t('peakMonth'), c.highSeason],
                   ].map(([k, v]) => (
                     <div key={k} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px' }}>
                       <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2 }}>{k}</div>
@@ -148,9 +150,9 @@ export default function YieldPricePage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                 {[
-                  ['Current', `₹${c.apmc?.toLocaleString()}`, 'var(--text)'],
-                  ['Low Season', `₹${c.lowSeasonPrice?.toLocaleString()}`, 'var(--red)'],
-                  ['High Season', `₹${c.highSeasonPrice?.toLocaleString()}`, 'var(--green)'],
+                  [t('currentPrice'), `₹${c.apmc?.toLocaleString()}`, 'var(--text)'],
+                  [t('lowSeason'), `₹${c.lowSeasonPrice?.toLocaleString()}`, 'var(--red)'],
+                  [t('highSeasonPrice'), `₹${c.highSeasonPrice?.toLocaleString()}`, 'var(--green)'],
                 ].map(([k, v, col]) => (
                   <div key={k} style={{ background: 'var(--bg2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
                     <div style={{ fontSize: 10, color: 'var(--text3)' }}>{k}</div>
@@ -160,7 +162,7 @@ export default function YieldPricePage() {
                 ))}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text3)', padding: '6px 10px', background: 'var(--bg2)', borderRadius: 8 }}>
-                📅 Best selling window: <strong style={{ color: 'var(--amber)' }}>{c.highSeason}</strong>
+                📅 {t('bestWindow')}: <strong style={{ color: 'var(--amber)' }}>{c.highSeason}</strong>
               </div>
             </div>
           ))}
@@ -208,8 +210,8 @@ export default function YieldPricePage() {
                     {marketInfo && (
                       <div style={{ padding: '8px 12px', background: marketInfo.forecastTrend === 'up' ? 'var(--green-light)' : 'var(--amber-light)', borderRadius: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                         {trendIcon(marketInfo.forecastTrend)}
-                        <span style={{ color: trendColor(marketInfo.forecastTrend), fontWeight: 700 }}>Price Forecast: {marketInfo.forecast}</span>
-                        <span style={{ color: 'var(--text3)', marginLeft: 'auto' }}>Best: {marketInfo.highSeason}</span>
+                        <span style={{ color: trendColor(marketInfo.forecastTrend), fontWeight: 700 }}>{t('priceForecastLabel')}: {marketInfo.forecast}</span>
+                        <span style={{ color: 'var(--text3)', marginLeft: 'auto' }}>{t('bestWindow')}: {marketInfo.highSeason}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>

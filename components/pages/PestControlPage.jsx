@@ -7,14 +7,11 @@ import { getAllCrops } from '../../lib/crops'
 import { PEST_DATABASE, SEVERITY_COLORS } from '../../lib/pest-database'
 import { useAuth } from '../../context/AuthContext'
 import { useTranslation } from '../../lib/i18n'
-import { Bug, Loader2, Sprout, Droplets, Thermometer, AlertTriangle, Leaf, FlaskConical } from 'lucide-react'
-
-const TABS = ['overview', 'directory', 'treatment', 'detected']
-const TAB_LABELS = { overview: ['📊 Overview', '📊 ಅವಲೋಕನ'], directory: ['🐛 Pest Directory', '🐛 ಕೀಟ ಪಟ್ಟಿ'], treatment: ['🌿 Treatment Guide', '🌿 ಚಿಕಿತ್ಸೆ ಮಾರ್ಗದರ್ಶಿ'], detected: ['🔍 Detected Pests', '🔍 ಪತ್ತೆ ಕೀಟಗಳು'] }
+import { Bug, Loader2, Sprout, Droplets, Thermometer } from 'lucide-react'
 
 export default function PestControlPage() {
   const { profile } = useAuth()
-  const { t, lang } = useTranslation()
+  const { t } = useTranslation()
   const [tab, setTab] = useState('overview')
   const [fields, setFields] = useState([])
   const [weather, setWeather] = useState(null)
@@ -50,6 +47,13 @@ export default function PestControlPage() {
     return <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 6, background: sc.bg, color: sc.color }}>{sc.label}</span>
   }
 
+  const TABS = [
+    { id: 'overview', label: t('tabPestOverview') },
+    { id: 'directory', label: t('tabDirectory') },
+    { id: 'treatment', label: t('tabTreatment') },
+    { id: 'detected', label: t('tabDetected') },
+  ]
+
   return (
     <div className="page">
       <div className="page-header">
@@ -63,8 +67,8 @@ export default function PestControlPage() {
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {TABS.map(tb => (
-          <button key={tb} onClick={() => setTab(tb)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb ? 'var(--green)' : 'var(--bg2)', color: tab === tb ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
-            {TAB_LABELS[tb][lang === 'kn' ? 1 : 0]}
+          <button key={tb.id} onClick={() => setTab(tb.id)} style={{ padding: '9px 18px', borderRadius: 10, border: tab === tb.id ? 'none' : '1px solid var(--border2)', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: tab === tb.id ? 'var(--green)' : 'var(--bg2)', color: tab === tb.id ? '#fff' : 'var(--text2)', transition: 'all 0.2s' }}>
+            {tb.label}
           </button>
         ))}
       </div>
@@ -73,29 +77,29 @@ export default function PestControlPage() {
       {tab === 'overview' && (
         <>
           <div className="glass-card" style={{ marginBottom: 20 }}>
-            <div className="card-header"><h3>🎯 Risk Assessment</h3></div>
+            <div className="card-header"><h3>🎯 {t('riskAssessment')}</h3></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
               {[
-                { label: 'Critical', count: criticalCount, sub: 'pests', color: '#dc2626', bg: '#fee2e2' },
-                { label: 'High', count: highCount, sub: 'pests', color: '#ea580c', bg: '#ffedd5' },
-                { label: 'Medium', count: mediumCount, sub: 'pests', color: '#ca8a04', bg: '#fef9c3' },
-              ].map(({ label, count, sub, color, bg }) => (
+                { label: t('criticalLabel'), count: criticalCount, color: '#dc2626', bg: '#fee2e2' },
+                { label: t('highLabel'), count: highCount, color: '#ea580c', bg: '#ffedd5' },
+                { label: t('mediumLabel'), count: mediumCount, color: '#ca8a04', bg: '#fef9c3' },
+              ].map(({ label, count, color, bg }) => (
                 <div key={label} style={{ background: bg, border: `1px solid ${color}30`, borderRadius: 12, padding: '16px 20px' }}>
                   <p style={{ fontSize: 12, color, fontWeight: 700, marginBottom: 6 }}>{label}</p>
                   <p style={{ fontSize: 40, fontWeight: 900, color, lineHeight: 1 }}>{count}</p>
-                  <p style={{ fontSize: 11, color, marginTop: 4 }}>{sub}</p>
+                  <p style={{ fontSize: 11, color, marginTop: 4 }}>{t('pestsLabel')}</p>
                 </div>
               ))}
             </div>
           </div>
           <div className="glass-card">
-            <div className="card-header"><h3>⚡ Quick Facts</h3></div>
+            <div className="card-header"><h3>⚡ {t('quickFacts')}</h3></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {[
-                ['Total Covered Pests', PEST_DATABASE.length, 'Common agricultural pests in India', 'var(--blue)'],
-                ['Comprehensive Treatments', '3x', 'Per pest (Organic, Chemical, Bio)', 'var(--green)'],
-                ['Your At-Risk Fields', loading ? '—' : highRiskFields, 'Based on live weather', highRiskFields > 0 ? 'var(--red)' : 'var(--green)'],
-                ['Current Humidity', weather ? `${weather.current?.humidity}%` : '—', weather?.current?.humidity > 80 ? '⚠️ High — pest risk elevated' : 'Normal range', 'var(--blue)'],
+                [t('totalCoveredPests'), PEST_DATABASE.length, t('commonPestsIndia'), 'var(--blue)'],
+                [t('comprehensiveTreatments'), '3x', t('perPest'), 'var(--green)'],
+                [t('atRiskFields'), loading ? '—' : highRiskFields, t('basedOnLiveWeather'), highRiskFields > 0 ? 'var(--red)' : 'var(--green)'],
+                [t('currentHumidity'), weather ? `${weather.current?.humidity}%` : '—', weather?.current?.humidity > 80 ? `⚠️ ${t('highLabel')} — ${t('riskLevel')}` : 'Normal', 'var(--blue)'],
               ].map(([k, v, sub, col]) => (
                 <div key={k} style={{ padding: '14px 16px', background: 'var(--bg2)', borderRadius: 12 }}>
                   <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>{k}</p>
@@ -122,13 +126,13 @@ export default function PestControlPage() {
                 <SeverityBadge s={pest.severity} />
               </div>
               <div>
-                <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, marginBottom: 6 }}>Affects Crops:</p>
+                <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, marginBottom: 6 }}>{t('affectsCrops')}</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {pest.affectedCrops.map(c => <span key={c} style={{ fontSize: 11, padding: '2px 8px', background: 'var(--bg2)', borderRadius: 6, color: 'var(--text2)', fontWeight: 600 }}>{c}</span>)}
                 </div>
               </div>
               <div style={{ padding: '8px 10px', background: 'var(--amber-light)', borderRadius: 8, fontSize: 12, color: 'var(--amber)', borderLeft: '3px solid var(--amber)' }}>
-                ⚠️ Risk Conditions: {pest.riskConditions}
+                ⚠️ {t('riskConditions')} {pest.riskConditions}
               </div>
             </div>
           ))}
@@ -146,19 +150,19 @@ export default function PestControlPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 14 }}>
                 {[
-                  { key: 'organic', label: '🌿 ORGANIC: ' + pest.treatment.organic.name, color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
-                  { key: 'chemical', label: '⚗️ CHEMICAL: ' + pest.treatment.chemical.name, color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
-                  { key: 'bioagent', label: '🔵 BIOAGENT: ' + pest.treatment.bioagent.name, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+                  { key: 'organic', label: `🌿 ${t('organicLabel')}: ${pest.treatment.organic.name}`, color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
+                  { key: 'chemical', label: `⚗️ ${t('chemicalLabel')}: ${pest.treatment.chemical.name}`, color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
+                  { key: 'bioagent', label: `🔵 ${t('bioagentLabel')}: ${pest.treatment.bioagent.name}`, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
                 ].map(({ key, label, color, bg, border }) => {
                   const tr = pest.treatment[key]
                   return (
                     <div key={key} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 12, padding: '14px' }}>
                       <p style={{ fontSize: 12, fontWeight: 800, color, marginBottom: 10 }}>{label}</p>
-                      <p style={{ fontSize: 11, color: '#374151', fontWeight: 700, marginBottom: 5 }}>Steps:</p>
+                      <p style={{ fontSize: 11, color: '#374151', fontWeight: 700, marginBottom: 5 }}>{t('stepsLabel')}</p>
                       {tr.steps.map((s, i) => <p key={i} style={{ fontSize: 11, color: '#374151', marginBottom: 3 }}>{i + 1}. {s}</p>)}
                       <div style={{ marginTop: 10, display: 'flex', gap: 12 }}>
-                        <span style={{ fontSize: 11, color }}><strong>💰 Cost:</strong> {tr.cost}</span>
-                        <span style={{ fontSize: 11, color }}><strong>⏱ Time:</strong> {tr.time}</span>
+                        <span style={{ fontSize: 11, color }}><strong>💰 {t('cost')}</strong> {tr.cost}</span>
+                        <span style={{ fontSize: 11, color }}><strong>⏱ {t('treatmentTime')}</strong> {tr.time}</span>
                       </div>
                     </div>
                   )
@@ -166,11 +170,11 @@ export default function PestControlPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div style={{ padding: '10px 14px', background: 'var(--green-light)', borderRadius: 10 }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', marginBottom: 4 }}>✅ Preventive Measures:</p>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', marginBottom: 4 }}>✅ {t('preventiveMeasures')}</p>
                   <p style={{ fontSize: 12, color: 'var(--text2)' }}>{pest.preventive}</p>
                 </div>
                 <div style={{ padding: '10px 14px', background: 'var(--bg2)', borderRadius: 10 }}>
-                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 4 }}>🔍 Pest Indicators:</p>
+                  <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text2)', marginBottom: 4 }}>🔍 {t('pestIndicators')}</p>
                   <p style={{ fontSize: 12, color: 'var(--text2)' }}>{pest.indicators}</p>
                 </div>
               </div>
@@ -185,7 +189,7 @@ export default function PestControlPage() {
           {weather && (
             <div className="glass-card" style={{ marginBottom: 20, padding: '14px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <div className="live-indicator">Live</div>
+                <div className="live-indicator">{t('liveBadge')}</div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>{t('weatherPestNote')} — {profile?.location || 'Your Location'}</span>
               </div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -238,7 +242,7 @@ export default function PestControlPage() {
                       </div>
                       {matchedPests.length > 0 && (
                         <div>
-                          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Susceptible to:</p>
+                          <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{t('susceptibleTo')}</p>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                             {matchedPests.map(p => {
                               const sc = SEVERITY_COLORS[p.severity]
