@@ -9,9 +9,37 @@ from flask_cors import CORS
 import joblib
 import numpy as np
 import os
+import urllib.request
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # allow calls from Next.js frontend
+
+def get_best_irrigation_time(lat, lon):
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=et0_fao_evapotranspiration&forecast_days=2&timezone=auto"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            data = json.loads(response.read().decode())
+        
+        times = data["hourly"]["time"]
+        et0_values = data["hourly"]["et0_fao_evapotranspiration"]
+        
+        now_str = datetime.now().isoformat()
+        min_et0 = float('inf')
+        best_time_str = "05:30 AM"
+        
+        for t, et0 in zip(times, et0_values):
+            if t > now_str[:16]:
+                if et0 < min_et0:
+                    min_et0 = et0
+                    dt = datetime.strptime(t, "%Y-%m-%dT%H:%M")
+                    best_time_str = dt.strftime("%I:%M %p")
+                    
+        return f"{best_time_str} (Live tracking: ET0={min_et0}mm/h)", best_time_str
+    except Exception as e:
+        return "Early morning 05:30–07:00 AM (minimises evaporation losses)", "06:00 AM"
 
 # Load model bundle
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "irrigation_model.pkl")
@@ -142,6 +170,10 @@ def predict():
         wind_speed = float(data.get("wind_speed", 10))
         rain_3day  = float(data.get("rain_3day", 0))
         et0_api    = float(data.get("et0", 0))
+        
+        lat = float(data.get("lat", 28.61))
+        lon = float(data.get("lon", 77.20))
+        best_time_long, best_time_short = get_best_irrigation_time(lat, lon)
 
         et0 = compute_et0(temp_max, temp_min, humidity, wind_speed, et0_api)
         etc = kc * et0
@@ -176,9 +208,9 @@ def predict():
             for i in range(min(sessions, 3)):
                 schedule.append({
                     "day": day_names[i * (7 // max(sessions, 1))],
-                    "time": "06:00 AM",
+                    "time": best_time_short,
                     "liters": round(per_session),
-                    "reason": "AI-computed irrigation session"
+                    "reason": f"AI-scheduled: lowest evaporation window"
                 })
 
         # Alerts
@@ -207,10 +239,10 @@ def predict():
             "root_zone_taw": round(TAW, 0),
             "depletion_mm": round(depletion_mm, 0),
             "schedule": schedule,
-            "next_irrigation": "Today, 06:00 AM" if should_irrigate else ("Hold — Rain expected" if rain_3day > 8 else "Tomorrow, 06:00 AM"),
+            "next_irrigation": f"Today, {best_time_short}" if should_irrigate else (f"Hold — Rain expected" if rain_3day > 8 else f"Tomorrow, {best_time_short}"),
             "alerts": alerts,
             "method": "Drip irrigation recommended" if infiltration < 10 else ("Flood/ponded irrigation" if "Rice" in crop_name else "Drip or sprinkler system"),
-            "best_time": "Early morning 05:30–07:00 AM (minimises evaporation losses)",
+            "best_time": best_time_long,
             "fertigation": f"Apply {round(max(0, 30-nitrogen)*0.2, 1)}kg/ha urea with next session" if nitrogen < 30 else "No fertigation needed this week",
             "ml_model": "RandomForest + GradientBoosting ensemble trained on 12,000 FAO-56 samples",
         })
