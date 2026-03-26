@@ -6,6 +6,24 @@ import { fetchWeather, geocodeCity } from '../../lib/weather'
 import { Droplets, Sprout, Brain, TrendingUp, CheckCircle, Loader2, MapPin, Thermometer, Wind, CloudRain } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
+function getSavedLiters(rec) {
+  const details = rec?.recommendation_json
+  const savedText = details?.waterSaved || ''
+  const litersMatch = savedText.match(/\(([\d,]+)L saved\)/i)
+  if (litersMatch) return Number.parseInt(litersMatch[1].replace(/,/g, ''), 10) || 0
+
+  const pctMatch = savedText.match(/(\d+(?:\.\d+)?)%/)
+  const waterAmount = Number(details?.waterAmountLiters ?? rec?.water_amount_liters ?? 0)
+  if (pctMatch && waterAmount > 0) {
+    const savedPct = Number.parseFloat(pctMatch[1])
+    if (savedPct > 0 && savedPct < 100) {
+      return Math.round(waterAmount * (savedPct / (100 - savedPct)))
+    }
+  }
+
+  return 0
+}
+
 export default function Dashboard({ onNavigate }) {
   const { profile } = useAuth()
   const [fields, setFields] = useState([])
@@ -21,12 +39,30 @@ export default function Dashboard({ onNavigate }) {
     const { data: f } = await supabase.from('fields').select('*').order('created_at', { ascending: false })
     setFields(f || [])
 
+    const baseStats = { totalFields: f?.length || 0, waterSaved: 0, efficiency: 0, alerts: 0 }
     if (f?.length) {
       const { data: recs } = await supabase.from('recommendations')
         .select('*, fields(name, crop_type)').in('field_id', f.map(x => x.id))
-        .order('created_at', { ascending: false }).limit(5)
-      setRecentRecs(recs || [])
-      setStats({ totalFields: f.length, waterSaved: Math.round(f.length * 12400), efficiency: 82 + Math.floor(Math.random() * 12), alerts: recs?.filter(r => r.urgency === 'critical' || r.urgency === 'high').length || 0 })
+        .order('created_at', { ascending: false })
+
+      const allRecs = recs || []
+      setRecentRecs(allRecs.slice(0, 5))
+
+      const waterSaved = allRecs.reduce((sum, rec) => sum + getSavedLiters(rec), 0)
+      const efficiencyValues = allRecs.map(rec => Number(rec.efficiency_score)).filter(value => Number.isFinite(value))
+      const efficiency = efficiencyValues.length
+        ? Math.round(efficiencyValues.reduce((sum, value) => sum + value, 0) / efficiencyValues.length)
+        : 0
+
+      setStats({
+        totalFields: f.length,
+        waterSaved,
+        efficiency,
+        alerts: allRecs.filter(r => r.urgency === 'critical' || r.urgency === 'high').length,
+      })
+    } else {
+      setRecentRecs([])
+      setStats(baseStats)
     }
 
     setSoilChartData(Array.from({ length: 7 }, (_, i) => ({
