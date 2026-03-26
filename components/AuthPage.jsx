@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 import { Droplets, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function AuthPage() {
