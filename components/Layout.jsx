@@ -77,11 +77,7 @@ export default function Layout() {
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
           </div>
-          <div className="topbar-right">
-            <div className="status-badge">
-              <Wifi size={12} /> FAO-56 Engine Online
-            </div>
-          </div>
+
         </div>
         <div className="page-content">
           <PageComponent onNavigate={setPage} />
