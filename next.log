@@ -1,0 +1,101 @@
+
+> aquaai-irrigation@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1111ms
+ ✓ Compiled /api/predict/yield-price in 201ms (56 modules)
+ POST /api/predict/yield-price 200 in 242ms
+ ○ Compiling / ...
+ ⨯ ./components/pages/YieldPricePrediction.jsx
+Error: 
+  [31mx[0m Unterminated regexp literal
+     ,-[[36;1;4m/Users/tanush.s.vashisht/Desktop/Tanush/work/hackathon/SoilSage/components/pages/YieldPricePrediction.jsx[0m:540:1]
+ [2m540[0m |                   </div>
+ [2m541[0m |                 </div>
+ [2m542[0m |               </div>
+ [2m543[0m |             </div>
+     : [31;1m             ^^^^^[0m
+ [2m544[0m |           </div>
+ [2m545[0m |         )}
+ [2m546[0m |       </div>
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/pages/YieldPricePrediction.jsx
+./components/Layout.jsx
+./app/page.js
+ ⨯ ./components/pages/YieldPricePrediction.jsx
+Error: 
+  [31mx[0m Unterminated regexp literal
+     ,-[[36;1;4m/Users/tanush.s.vashisht/Desktop/Tanush/work/hackathon/SoilSage/components/pages/YieldPricePrediction.jsx[0m:540:1]
+ [2m540[0m |                   </div>
+ [2m541[0m |                 </div>
+ [2m542[0m |               </div>
+ [2m543[0m |             </div>
+     : [31;1m             ^^^^^[0m
+ [2m544[0m |           </div>
+ [2m545[0m |         )}
+ [2m546[0m |       </div>
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/pages/YieldPricePrediction.jsx
+./components/Layout.jsx
+./app/page.js
+ ⨯ ./components/pages/YieldPricePrediction.jsx
+Error: 
+  [31mx[0m Unterminated regexp literal
+     ,-[[36;1;4m/Users/tanush.s.vashisht/Desktop/Tanush/work/hackathon/SoilSage/components/pages/YieldPricePrediction.jsx[0m:540:1]
+ [2m540[0m |                   </div>
+ [2m541[0m |                 </div>
+ [2m542[0m |               </div>
+ [2m543[0m |             </div>
+     : [31;1m             ^^^^^[0m
+ [2m544[0m |           </div>
+ [2m545[0m |         )}
+ [2m546[0m |       </div>
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/pages/YieldPricePrediction.jsx
+./components/Layout.jsx
+./app/page.js
+ GET / 500 in 1628ms
+ ⨯ ./components/pages/YieldPricePrediction.jsx
+Error: 
+  [31mx[0m Unterminated regexp literal
+     ,-[[36;1;4m/Users/tanush.s.vashisht/Desktop/Tanush/work/hackathon/SoilSage/components/pages/YieldPricePrediction.jsx[0m:540:1]
+ [2m540[0m |                   </div>
+ [2m541[0m |                 </div>
+ [2m542[0m |               </div>
+ [2m543[0m |             </div>
+     : [31;1m             ^^^^^[0m
+ [2m544[0m |           </div>
+ [2m545[0m |         )}
+ [2m546[0m |       </div>
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/pages/YieldPricePrediction.jsx
+./components/Layout.jsx
+./app/page.js
+ GET / 500 in 9ms
+ GET / 500 in 13ms
+ GET / 500 in 4ms
+ GET / 500 in 3ms
