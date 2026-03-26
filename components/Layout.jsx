@@ -31,7 +31,7 @@ export default function Layout() {
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="logo-icon" style={{ width: 36, height: 36, borderRadius: 10 }}><Droplets size={18} /></div>
-            {!collapsed && <span className="sidebar-brand">AquaAI</span>}
+            {!collapsed && <span className="sidebar-brand">SoilSage</span>}
           </div>
           <button className="sidebar-toggle" onClick={() => setCollapsed(p => !p)}>
             {collapsed ? <Menu size={18} /> : <X size={18} />}
